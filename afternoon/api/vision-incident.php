@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/response.php';
 require __DIR__ . '/../lib/vision_config.php';
+require __DIR__ . '/../lib/vision_evidence.php';
 
 // GET /api/vision-incident.php?id=<incident_id>
 // อ่าน incident เดียวสำหรับหน้ารายละเอียด (incident.html)
@@ -34,12 +35,39 @@ function get_incident(): void
     }
     $row['max_confidence'] = $row['max_confidence'] !== null ? (float)$row['max_confidence'] : null;
 
+    // ภาพหลักฐาน: เอา observation ล่าสุดที่มีภาพ (ใหม่ก่อน) ไม่เกิน 5 รายการ
+    // อ่านอย่างเดียว ไม่เปลี่ยน contract เดิมของ key incident/aggregation
+    $ev = db()->prepare(
+        "SELECT id, image_path, captured_at, detected_count, max_confidence
+         FROM vision_observations
+         WHERE incident_id = :id AND image_path IS NOT NULL
+         ORDER BY captured_at DESC, id DESC
+         LIMIT 5"
+    );
+    $ev->execute(['id' => $id]);
+
+    $evidence = [];
+    foreach ($ev->fetchAll(PDO::FETCH_ASSOC) as $item) {
+        $safe = evidence_path_or_null($item['image_path']);
+        if ($safe === null) {
+            continue;
+        }
+        $evidence[] = [
+            'observation_id' => (int)$item['id'],
+            'image_path' => $safe,
+            'captured_at' => $item['captured_at'],
+            'detected_count' => (int)$item['detected_count'],
+            'max_confidence' => $item['max_confidence'] !== null ? (float)$item['max_confidence'] : null,
+        ];
+    }
+
     json_response([
         'incident' => $row,
+        'evidence' => $evidence,
         'aggregation' => [
             'window_minutes' => INCIDENT_AGGREGATION_WINDOW_MINUTES,
             'status' => 'PROTOTYPE / UNCALIBRATED',
-            'rule' => 'same camera/location/area/source + pending incident within time window',
+            'rule' => 'same camera/location/area/source/origin + pending incident within time window',
         ],
     ]);
 }

@@ -5,42 +5,47 @@
 // Phase G: ค้นหา + กรองสถานะ/พื้นที่ + แบ่งหน้าฝั่ง server, state อยู่ใน URL
 // การเปลี่ยนสถานะเหตุทำที่หน้ารายละเอียดเท่านั้น เพื่อให้มีบริบทครบก่อนตัดสินใจ
 
-// accent-attention = ยังต้องมีคนทำอะไรต่อ ใบอื่นเป็นสถิติอ้างอิง
-const SUMMARY_CARD_DEFS = [
-    ['pending_review', 'รอตรวจสอบ', 'accent-attention'],
-    ['needs_check', 'ต้องดำเนินการ', 'accent-attention'],
-    ['confirmed', 'ยืนยันแล้ว', ''],
-    ['resolved', 'ดำเนินการแล้ว', ''],
-    ['rejected', 'ปฏิเสธ', ''],
-    ['total', 'เหตุทั้งหมด', ''],
-];
-
-// ตัวเลือกสถานะเดียวในหน้าจอ แปลงเป็น query ของ API ที่มีสองคอลัมน์
-// (review_status กับ action_status) — ไม่แก้ contract ของ API
-const STATUS_QUERY = {
-    pending: { review_status: 'pending' },
-    needs_check: { action_status: 'needs_check' },
-    resolved: { action_status: 'resolved' },
-    rejected: { review_status: 'rejected' },
+// กลุ่มงานสามกลุ่ม — ชื่อกลุ่มตรงกับ view ของ api/vision.php
+// เปิดหน้ามาอยู่ที่ "ต้องตรวจ" เสมอ เพราะเป็นงานที่ค้างอยู่กับคน
+const VIEWS = {
+    review: {
+        title: 'เหตุที่รอการตรวจ',
+        empty: ['ไม่มีเหตุรอตรวจ', 'ตรวจครบแล้ว เหตุใหม่จะมาแสดงที่นี่'],
+    },
+    action: {
+        title: 'เหตุที่ยืนยันแล้วและยังไม่ปิดงาน',
+        empty: ['ไม่มีงานค้าง', 'เหตุที่ยืนยันแล้วถูกปิดงานครบแล้ว'],
+    },
+    history: {
+        title: 'ประวัติเหตุที่ปิดแล้ว',
+        empty: ['ยังไม่มีประวัติ', 'เหตุที่ปิดงานหรือถูกปฏิเสธจะมาแสดงที่นี่'],
+    },
 };
 
 const COLUMN_COUNT = 7;
 const SEARCH_DEBOUNCE_MS = 300;
-const DEFAULTS = { q: '', status: '', area_type: '', page: 1 };
+const DEFAULTS = { view: 'review', q: '', area_type: '', page: 1 };
 
 const tbody = document.querySelector('#vision-table tbody');
 const paginationEl = document.getElementById('vision-pagination');
 const searchInput = document.getElementById('filter-q');
-const statusSelect = document.getElementById('filter-status');
 const areaSelect = document.getElementById('filter-area');
+const tabsEl = document.getElementById('view-tabs');
+const listTitleEl = document.getElementById('list-title');
+const queueTotalEl = document.getElementById('queue-total');
 
 let state = readQueryState(DEFAULTS);
+// ค่า view จาก URL อาจถูกพิมพ์มั่ว — กันไม่ให้หน้าพังเพราะ API ตอบ 422
+if (!VIEWS[state.view]) state.view = DEFAULTS.view;
 let requestSeq = 0;
 
 function applyStateToControls() {
     searchInput.value = state.q;
-    statusSelect.value = state.status;
     areaSelect.value = state.area_type;
+    listTitleEl.textContent = VIEWS[state.view].title;
+    for (const tab of tabsEl.querySelectorAll('.view-tab')) {
+        tab.setAttribute('aria-selected', String(tab.dataset.view === state.view));
+    }
 }
 
 async function loadVision() {
@@ -50,11 +55,11 @@ async function loadVision() {
 
     const seq = ++requestSeq;
     const query = apiQuery({
+        view: state.view,
         q: state.q,
         area_type: state.area_type,
         page: state.page,
         per_page: 10,
-        ...(STATUS_QUERY[state.status] ?? {}),
     });
 
     try {
@@ -63,8 +68,7 @@ async function loadVision() {
         if (seq !== requestSeq) return;
 
         if (!res.ok) {
-            document.getElementById('summary-cards').innerHTML =
-                `<p class="msg error">${escapeHtml(data.error ?? 'โหลดข้อมูลไม่สำเร็จ')}</p>`;
+            queueTotalEl.textContent = '';
             tbody.innerHTML = emptyState(COLUMN_COUNT, 'โหลดคิวไม่สำเร็จ', data.error ?? '', 'icon-warning');
             return;
         }
@@ -91,26 +95,24 @@ async function loadVision() {
     }
 }
 
-// summary เป็นภาพรวมทั้งระบบ ไม่ใช่ผลของตัวกรอง — ระบุไว้ในหัวข้อการ์ดด้วย
+// ตัวเลขบนแท็บเป็นภาพรวมทั้งระบบ ไม่ใช่ผลของคำค้น/ตัวกรอง
 function renderSummary(summary) {
-    document.getElementById('summary-cards').innerHTML = SUMMARY_CARD_DEFS
-        .map(([key, label, accent]) => `
-            <div class="card ${accent}">
-                <div class="label">${escapeHtml(label)}</div>
-                <div class="value num">${Number(summary[key]) || 0}</div>
-            </div>`)
-        .join('');
+    for (const el of tabsEl.querySelectorAll('.view-tab-count')) {
+        el.textContent = Number(summary[el.dataset.count]) || 0;
+    }
+    queueTotalEl.textContent = `เหตุทั้งหมดในระบบ ${Number(summary.total) || 0} รายการ`;
 }
 
 function hasFilter() {
-    return state.q !== '' || state.status !== '' || state.area_type !== '';
+    return state.q !== '' || state.area_type !== '';
 }
 
 function renderTable(rows) {
     if (!Array.isArray(rows) || rows.length === 0) {
+        const [emptyTitle, emptyHint] = VIEWS[state.view].empty;
         tbody.innerHTML = hasFilter()
             ? emptyState(COLUMN_COUNT, 'ไม่พบเหตุที่ตรงกับตัวกรอง', 'ลองแก้คำค้นหรือกดล้างตัวกรอง')
-            : emptyState(COLUMN_COUNT, 'ยังไม่มีเหตุในคิว', 'เมื่อระบบรวมข้อมูลการตรวจพบได้เป็นเหตุ จะแสดงที่นี่');
+            : emptyState(COLUMN_COUNT, emptyTitle, emptyHint);
         return;
     }
 
@@ -120,7 +122,7 @@ function renderTable(rows) {
             <tr>
                 <td class="cell-lead">
                     <span class="cell-primary">${escapeHtml(r.location)}</span>
-                    <span class="cell-secondary">${areaTag(r.area_type)}</span>
+                    <span class="cell-secondary">${areaTag(r.area_type)} ${originTag(r.record_origin)}</span>
                 </td>
                 <td data-label="จุด/กล้อง">${escapeHtml(r.camera_name)}</td>
                 <td data-label="พบล่าสุด">${escapeHtml(formatDateTime(r.last_seen))}</td>
@@ -138,8 +140,15 @@ function renderTable(rows) {
 
 function updateFilter(patch) {
     state = { ...state, ...patch, page: 1 };
+    applyStateToControls();
     loadVision();
 }
+
+tabsEl.addEventListener('click', (event) => {
+    const tab = event.target.closest('.view-tab');
+    if (!tab || tab.dataset.view === state.view) return;
+    updateFilter({ view: tab.dataset.view });
+});
 
 let searchTimer = null;
 searchInput.addEventListener('input', () => {
@@ -153,11 +162,11 @@ document.getElementById('filter-bar').addEventListener('submit', (event) => {
     updateFilter({ q: searchInput.value.trim() });
 });
 
-statusSelect.addEventListener('change', () => updateFilter({ status: statusSelect.value }));
 areaSelect.addEventListener('change', () => updateFilter({ area_type: areaSelect.value }));
 
+// ล้างเฉพาะคำค้น/ตัวกรอง — ยังอยู่กลุ่มงานเดิม
 document.getElementById('filter-reset').addEventListener('click', () => {
-    state = { ...DEFAULTS };
+    state = { ...DEFAULTS, view: state.view };
     applyStateToControls();
     loadVision();
 });

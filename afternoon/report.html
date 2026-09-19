@@ -71,27 +71,33 @@
                     <input type="hidden" name="location_source" id="location_source" value="manual">
                 </fieldset>
 
-                <label for="waste_type">
-                    ประเภทขยะ
-                    <select name="waste_type" id="waste_type" required>
-                        <option value="general">ทั่วไป</option>
-                        <option value="recyclable">รีไซเคิล</option>
-                        <option value="hazardous">อันตราย</option>
-                        <option value="organic">อินทรีย์</option>
-                    </select>
-                </label>
-
-                <label for="amount_kg">
-                    ปริมาณโดยประมาณ (กก.)
-                    <input type="number" name="amount_kg" id="amount_kg" required min="1" max="1000" step="1">
-                    <span class="field-hint">ประมาณคร่าว ๆ ได้ ระหว่าง 1–1000 กก.</span>
-                </label>
-
                 <label for="detail">
                     รายละเอียด
                     <textarea name="detail" id="detail" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"></textarea>
                     <span class="char-counter" id="detail-counter">0 / 500</span>
                 </label>
+
+                <!-- สถานที่มาก่อน แล้วรายละเอียดแบบไม่บังคับ สองช่องนี้อยู่ท้ายสุดเพราะเป็นช่องที่
+                     แบบฟอร์มเดิมบังคับไว้ ยังต้องกรอก แต่ไม่ควรแย่งความสนใจจากสถานที่ -->
+                <fieldset class="fieldset-secondary">
+                    <legend>ข้อมูลประกอบ</legend>
+
+                    <label for="waste_type">
+                        ประเภทขยะ
+                        <select name="waste_type" id="waste_type" required>
+                            <option value="general">ทั่วไป</option>
+                            <option value="recyclable">รีไซเคิล</option>
+                            <option value="hazardous">อันตราย</option>
+                            <option value="organic">อินทรีย์</option>
+                        </select>
+                    </label>
+
+                    <label for="amount_kg">
+                        ปริมาณโดยประมาณ (กก.)
+                        <input type="number" name="amount_kg" id="amount_kg" required min="1" max="1000" step="1">
+                        <span class="field-hint">ประมาณคร่าว ๆ ได้ ระหว่าง 1–1000 กก.</span>
+                    </label>
+                </fieldset>
 
                 <!-- Phase H: เตือนรายการที่อาจซ้ำ ไม่บล็อกการส่ง -->
                 <div class="duplicate-warning" id="duplicate-warning" hidden>

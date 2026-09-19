@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/response.php';
 require __DIR__ . '/../lib/pagination.php';
+require __DIR__ . '/../lib/vision_evidence.php';
 
 // Drill-down endpoint: raw observations are evidence/source records.
 // Human review happens at incident level via /api/vision-review.php.
@@ -38,7 +39,7 @@ function get_observations(): void
     $offset = $paging['offset'];
     $stmt = $pdo->prepare(
         "SELECT id, incident_id, camera_name, location, area_type,
-                detected_count, max_confidence, source_mode, captured_at
+                detected_count, max_confidence, source_mode, record_origin, image_path, captured_at
          FROM vision_observations
          WHERE incident_id = :incident_id
          ORDER BY captured_at ASC, id ASC
@@ -51,6 +52,8 @@ function get_observations(): void
         $row['incident_id'] = $row['incident_id'] !== null ? (int)$row['incident_id'] : null;
         $row['detected_count'] = (int)$row['detected_count'];
         $row['max_confidence'] = $row['max_confidence'] !== null ? (float)$row['max_confidence'] : null;
+        // กันแถวเก่า/แถวที่ถูกแก้มือไม่ให้ path แปลก ๆ หลุดไปถึง browser
+        $row['image_path'] = evidence_path_or_null($row['image_path']);
         return $row;
     }, $stmt->fetchAll(PDO::FETCH_ASSOC));
 

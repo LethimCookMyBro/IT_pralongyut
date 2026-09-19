@@ -25,30 +25,39 @@
         <section>
             <div class="replay-banner">
                 <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                <span>โหมดเล่นซ้ำ (replay) — ใช้ภาพอ้างอิงทดสอบระบบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง</span>
+                <span>โหมดเล่นซ้ำ (replay) — หน้านี้อาจมีทั้ง <strong>ข้อมูลสาธิต</strong> และ <strong>ผลจาก AI ที่รันจริงบนวิดีโออ้างอิง</strong> ดูป้ายที่มาของแต่ละเหตุประกอบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง และไม่ใช่เหตุจริงจากบางแสน</span>
             </div>
             <div class="replay-banner warning">
                 <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
                 <span>ต้นแบบ ยังไม่ปรับเทียบ (PROTOTYPE / UNCALIBRATED) — ระบบรวมข้อมูลการตรวจพบจากกล้อง/จุดเดียวกันภายในช่วงเวลาหนึ่งก่อนสร้างเหตุให้คนตรวจ</span>
             </div>
 
-            <h1 class="page-title">คิวเหตุที่ต้องตรวจสอบ</h1>
+            <h1 class="page-title">ศูนย์ตรวจสอบ</h1>
             <p class="muted">
                 ข้อมูลการตรวจพบรายครั้ง (raw observation) ไม่เท่ากับหนึ่งเหตุ และไม่เท่ากับหนึ่งงานของเจ้าหน้าที่
                 หน้านี้ให้คนตรวจ “เหตุ” ที่ระบบรวมแล้ว เพื่อลดการแจ้งซ้ำจากภาพหลายเฟรม
                 <span class="term-en">observation ≠ incident ≠ task</span>
             </p>
 
-            <div class="card-grid" id="summary-cards">
-                <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
-                <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
-                <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
+            <!-- แบ่งงานตาม "ต้องทำอะไรต่อ" — เปิดหน้ามาเห็นงานที่ต้องทำตอนนี้ ไม่ใช่ทุกอย่างปนกัน
+                 การกรองทำที่ฝั่ง server (api/vision.php?view=…) จึงรองรับข้อมูลจำนวนมากได้ -->
+            <div class="view-tabs" role="tablist" aria-label="กลุ่มงาน" id="view-tabs">
+                <button type="button" class="view-tab" role="tab" data-view="review" aria-selected="true" aria-controls="incident-list">
+                    ต้องตรวจ<span class="view-tab-count" data-count="to_review">–</span>
+                </button>
+                <button type="button" class="view-tab" role="tab" data-view="action" aria-selected="false" aria-controls="incident-list">
+                    ต้องดำเนินการ<span class="view-tab-count" data-count="to_act">–</span>
+                </button>
+                <button type="button" class="view-tab" role="tab" data-view="history" aria-selected="false" aria-controls="incident-list">
+                    ประวัติ<span class="view-tab-count" data-count="history">–</span>
+                </button>
             </div>
+            <p class="muted" id="queue-total"></p>
         </section>
 
-        <section>
+        <section id="incident-list">
             <div class="section-head">
-                <h2>รายการเหตุที่อาจเป็นจุดขยะ</h2>
+                <h2 id="list-title">เหตุที่รอการตรวจ</h2>
             </div>
             <p class="muted" id="priority-note">
                 ลำดับความสำคัญอธิบายได้: รอตรวจสอบมาก่อน แล้วเรียงตามจำนวนครั้งที่พบ จำนวนสูงสุดที่ตรวจพบ และความล่าสุด
@@ -58,15 +67,6 @@
             <form class="filter-bar" id="filter-bar" role="search">
                 <label class="field field-search" for="filter-q">ค้นหาสถานที่หรือชื่อกล้อง
                     <input type="search" id="filter-q" name="q" placeholder="เช่น หาดบางแสน, CAM-01" autocomplete="off">
-                </label>
-                <label class="field" for="filter-status">สถานะ
-                    <select id="filter-status" name="status">
-                        <option value="">ทั้งหมด</option>
-                        <option value="pending">รอตรวจสอบ</option>
-                        <option value="needs_check">ต้องดำเนินการ</option>
-                        <option value="resolved">เสร็จแล้ว</option>
-                        <option value="rejected">ปฏิเสธ</option>
-                    </select>
                 </label>
                 <label class="field" for="filter-area">ประเภทพื้นที่
                     <select id="filter-area" name="area_type">

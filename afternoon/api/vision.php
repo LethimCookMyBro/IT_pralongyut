@@ -5,11 +5,25 @@ require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/response.php';
 require __DIR__ . '/../lib/vision_config.php';
 require __DIR__ . '/../lib/pagination.php';
+require __DIR__ . '/../lib/vision_evidence.php';
 
 const VALID_AREA_TYPES = ["land", "water"];
 const VALID_SOURCE_MODES = ["replay", "camera", "cctv"];
+const VALID_RECORD_ORIGINS = ["demo_seed", "detector_run"];
 const VALID_REVIEW_STATUSES = ["pending", "confirmed", "rejected"];
 const VALID_ACTION_STATUSES = ["none", "needs_check", "resolved"];
+
+// กลุ่มงานของเจ้าหน้าที่ — แบ่งคิวตาม "ต้องทำอะไรต่อ" ไม่ใช่ตามสถานะดิบ
+// ใช้คอลัมน์เดิมทั้งหมด ไม่ได้เพิ่มคอลัมน์หรือเปลี่ยน flow การตรวจ
+// (idx_incident_queue (review_status, action_status, last_seen) รองรับเงื่อนไขเหล่านี้อยู่แล้ว)
+const VIEW_CONDITIONS = [
+    // ต้องตรวจ — ยังรอคนกด ยืนยัน/ปฏิเสธ
+    "review" => "review_status = 'pending'",
+    // ต้องดำเนินการ — ยืนยันแล้วแต่ยังไม่ปิดงาน
+    "action" => "review_status = 'confirmed' AND action_status <> 'resolved'",
+    // ประวัติ — ปิดงานแล้ว หรือถูกปฏิเสธ (ปฏิเสธเป็นปลายทาง)
+    "history" => "(action_status = 'resolved' OR review_status = 'rejected')",
+];
 
 function validate_vision_observation(array $data): array
 {
@@ -57,6 +71,16 @@ function validate_vision_observation(array $data): array
         throw new InvalidArgumentException("source_mode: ต้องเป็นหนึ่งใน " . implode(", ", VALID_SOURCE_MODES));
     }
 
+    // record_origin แยกจาก source_mode: replay อาจเป็นทั้ง seed demo หรือผล inference จริง
+    $record_origin = $data["record_origin"] ?? "demo_seed";
+    if (!is_string($record_origin) || !in_array($record_origin, VALID_RECORD_ORIGINS, true)) {
+        throw new InvalidArgumentException("record_origin: ต้องเป็นหนึ่งใน " . implode(", ", VALID_RECORD_ORIGINS));
+    }
+
+    // ภาพหลักฐานของการตรวจครั้งนี้ — optional
+    // validate_evidence_image_path() บังคับให้เหลือแค่ไฟล์รูปในโฟลเดอร์ที่อนุญาต
+    $image_path = validate_evidence_image_path($data["image_path"] ?? null);
+
     return [
         "camera_name" => $camera_name,
         "location" => $location,
@@ -64,6 +88,8 @@ function validate_vision_observation(array $data): array
         "detected_count" => $detected_count,
         "max_confidence" => $max_confidence,
         "source_mode" => $source_mode,
+        "record_origin" => $record_origin,
+        "image_path" => $image_path,
     ];
 }
 
@@ -86,6 +112,7 @@ function get_vision(): void
         $review_status = validate_filter($_GET['review_status'] ?? null, VALID_REVIEW_STATUSES, 'review_status');
         $action_status = validate_filter($_GET['action_status'] ?? null, VALID_ACTION_STATUSES, 'action_status');
         $area_type = validate_filter($_GET['area_type'] ?? null, VALID_AREA_TYPES, 'area_type');
+        $view = validate_filter($_GET['view'] ?? null, array_keys(VIEW_CONDITIONS), 'view');
         $paging = pagination_params($_GET);
     } catch (InvalidArgumentException $e) {
         json_error($e->getMessage(), 422);
@@ -114,6 +141,10 @@ function get_vision(): void
     if ($area_type !== null) {
         $where .= " AND area_type = :area_type";
         $params['area_type'] = $area_type;
+    }
+    if ($view !== null) {
+        // ค่าคงที่จาก VIEW_CONDITIONS เท่านั้น ($view ผ่าน validate_filter มาแล้ว) ไม่มี input ของผู้ใช้ต่อเข้า SQL
+        $where .= " AND " . VIEW_CONDITIONS[$view];
     }
 
     // total นับด้วย filter/search ชุดเดียวกับที่ใช้ดึงรายการ เพื่อให้ pagination ตรงกัน
@@ -153,7 +184,10 @@ function get_vision(): void
             SUM(review_status = 'confirmed') AS confirmed,
             SUM(review_status = 'rejected') AS rejected,
             SUM(action_status = 'needs_check') AS needs_check,
-            SUM(action_status = 'resolved') AS resolved
+            SUM(action_status = 'resolved') AS resolved,
+            SUM(" . VIEW_CONDITIONS['review'] . ") AS to_review,
+            SUM(" . VIEW_CONDITIONS['action'] . ") AS to_act,
+            SUM(" . VIEW_CONDITIONS['history'] . ") AS history
          FROM vision_incidents"
     )->fetch(PDO::FETCH_ASSOC);
 
@@ -165,10 +199,11 @@ function get_vision(): void
         'aggregation' => [
             'window_minutes' => INCIDENT_AGGREGATION_WINDOW_MINUTES,
             'status' => 'PROTOTYPE / UNCALIBRATED',
-            'rule' => 'same camera/location/area/source + pending incident within time window',
+            'rule' => 'same camera/location/area/source/origin + pending incident within time window',
         ],
         'priority_rule' => 'pending first; observation_count desc; peak_detected_count desc; last_seen desc',
         'summary' => $summary,
+        'view' => $view,
         'incidents' => $incidents,
         'pagination' => pagination_meta($paging['page'], $paging['per_page'], $total),
     ]);
@@ -214,6 +249,7 @@ function post_vision(): void
                    AND location = :location
                    AND area_type = :area_type
                    AND source_mode = :source_mode
+                   AND record_origin = :record_origin
                    AND review_status = 'pending'
                    AND last_seen >= DATE_SUB(NOW(), INTERVAL $window MINUTE)
                  ORDER BY last_seen DESC, id DESC
@@ -225,6 +261,7 @@ function post_vision(): void
                 'location' => $clean['location'],
                 'area_type' => $clean['area_type'],
                 'source_mode' => $clean['source_mode'],
+                'record_origin' => $clean['record_origin'],
             ]);
             $existing = $find->fetch(PDO::FETCH_ASSOC);
 
@@ -255,12 +292,12 @@ function post_vision(): void
             } else {
                 $create = $pdo->prepare(
                     "INSERT INTO vision_incidents
-                        (camera_name, location, area_type, source_mode,
+                        (camera_name, location, area_type, source_mode, record_origin,
                          first_seen, last_seen, observation_count,
                          first_detected_count, latest_detected_count, peak_detected_count,
                          max_confidence)
                      VALUES
-                        (:camera_name, :location, :area_type, :source_mode,
+                        (:camera_name, :location, :area_type, :source_mode, :record_origin,
                          NOW(), NOW(), 1,
                          :first_detected_count, :latest_detected_count, :peak_detected_count,
                          :max_confidence)"
@@ -270,6 +307,7 @@ function post_vision(): void
                     'location' => $clean['location'],
                     'area_type' => $clean['area_type'],
                     'source_mode' => $clean['source_mode'],
+                    'record_origin' => $clean['record_origin'],
                     'first_detected_count' => $clean['detected_count'],
                     'latest_detected_count' => $clean['detected_count'],
                     'peak_detected_count' => $clean['detected_count'],
@@ -281,9 +319,9 @@ function post_vision(): void
 
         $observation = $pdo->prepare(
             "INSERT INTO vision_observations
-                (incident_id, camera_name, location, area_type, detected_count, max_confidence, source_mode)
+                (incident_id, camera_name, location, area_type, detected_count, max_confidence, source_mode, record_origin, image_path)
              VALUES
-                (:incident_id, :camera_name, :location, :area_type, :detected_count, :max_confidence, :source_mode)"
+                (:incident_id, :camera_name, :location, :area_type, :detected_count, :max_confidence, :source_mode, :record_origin, :image_path)"
         );
         $observation->execute(['incident_id' => $incident_id] + $clean);
         $observation_id = (int)$pdo->lastInsertId();

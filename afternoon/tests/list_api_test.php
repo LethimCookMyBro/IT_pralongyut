@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . "/../lib/cli_only.php";
+
 // Integration test: pagination / filter / search ของ endpoint ที่คืนรายการ
 //   GET api/reports.php
 //   GET api/vision.php

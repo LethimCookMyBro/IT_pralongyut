@@ -52,6 +52,7 @@ CREATE TABLE vision_incidents (
     location VARCHAR(100) NOT NULL,
     area_type ENUM('land','water') NOT NULL,
     source_mode ENUM('replay','camera','cctv') NOT NULL DEFAULT 'replay',
+    record_origin ENUM('demo_seed','detector_run') NOT NULL DEFAULT 'demo_seed',
     first_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     observation_count INT NOT NULL DEFAULT 1,
@@ -76,6 +77,10 @@ CREATE TABLE vision_observations (
     detected_count INT NOT NULL,
     max_confidence DECIMAL(5,4) NULL,
     source_mode ENUM('replay','camera','cctv') NOT NULL DEFAULT 'replay',
+    record_origin ENUM('demo_seed','detector_run') NOT NULL DEFAULT 'demo_seed',
+    -- path ของภาพหลักฐาน เช่น assets/vision/street-replay-01.jpg
+    -- เก็บแค่ path ไม่เก็บ binary/base64 — เพิ่มใน migrations/002_vision_observation_image.sql
+    image_path VARCHAR(255) NULL,
     captured_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_observation_incident (incident_id, captured_at),
     CONSTRAINT fk_observation_incident

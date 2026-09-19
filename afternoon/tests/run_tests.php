@@ -1,8 +1,11 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . "/../lib/cli_only.php";
+
 require __DIR__ . "/../lib/validate.php";
 require __DIR__ . "/../lib/pagination.php";
+require __DIR__ . "/../lib/vision_evidence.php";
 
 $passed = 0;
 $failed = 0;
@@ -192,6 +195,156 @@ check("search term escapes LIKE wildcards", function () {
 check("search term is length-capped", function () {
     $pattern = search_like_pattern(str_repeat("ก", 500));
     assert(mb_strlen($pattern) === 102, "ควรตัดที่ 100 ตัว + %% ได้ " . mb_strlen($pattern));
+});
+
+// ---------- PHASE F: evidence image path ----------
+
+function expect_image_error($value): void
+{
+    try {
+        validate_evidence_image_path($value);
+    } catch (InvalidArgumentException $e) {
+        if (!str_starts_with($e->getMessage(), "image_path")) {
+            throw new Exception("error should start with 'image_path' got: " . $e->getMessage());
+        }
+        return;
+    }
+    throw new Exception("expected InvalidArgumentException for " . var_export($value, true));
+}
+
+check("absent image_path is null", function () {
+    assert(validate_evidence_image_path(null) === null);
+    assert(validate_evidence_image_path("") === null);
+    assert(validate_evidence_image_path("   ") === null);
+});
+
+check("known evidence file is accepted", function () {
+    $ok = validate_evidence_image_path("assets/vision/street-replay-01.jpg");
+    assert($ok === "assets/vision/street-replay-01.jpg", var_export($ok, true));
+});
+
+check("path traversal is rejected", function () {
+    foreach ([
+        "assets/vision/../../lib/db.php",
+        "assets/vision/..%2F..%2Fdb.php",
+        "../assets/vision/street-replay-01.jpg",
+        "assets/vision/sub/street-replay-01.jpg",
+        "assets/vision/.hidden.jpg",
+    ] as $bad) {
+        expect_image_error($bad);
+    }
+});
+
+check("absolute and windows paths are rejected", function () {
+    foreach ([
+        "/etc/passwd",
+        "C:\\xampp\\htdocs\\bangsaen\\index.html",
+        "assets\\vision\\street-replay-01.jpg",
+        "//host/share/x.jpg",
+    ] as $bad) {
+        expect_image_error($bad);
+    }
+});
+
+check("urls and javascript: are rejected", function () {
+    foreach ([
+        "javascript:alert(1)",
+        "JavaScript:alert(1)",
+        "data:image/png;base64,AAAA",
+        "http://evil.example/x.jpg",
+        "https://evil.example/assets/vision/x.jpg",
+        "//evil.example/x.jpg",
+    ] as $bad) {
+        expect_image_error($bad);
+    }
+});
+
+check("wrong folder or extension is rejected", function () {
+    foreach ([
+        "assets/other/street-replay-01.jpg",
+        "street-replay-01.jpg",
+        "assets/vision/shell.php",
+        "assets/vision/street-replay-01.jpg.php",
+        "assets/vision/street-replay-01.svg",
+    ] as $bad) {
+        expect_image_error($bad);
+    }
+});
+
+check("missing file is rejected", fn() => expect_image_error("assets/vision/does-not-exist.jpg"));
+
+check("null byte and non-string are rejected", function () {
+    expect_image_error("assets/vision/street-replay-01.jpg\0.php");
+    expect_image_error(123);
+    expect_image_error(true);
+    expect_image_error([]);
+});
+
+check("evidence_path_or_null never throws", function () {
+    assert(evidence_path_or_null("assets/vision/../../lib/db.php") === null);
+    assert(evidence_path_or_null("javascript:alert(1)") === null);
+    assert(evidence_path_or_null(null) === null);
+    assert(evidence_path_or_null("assets/vision/street-replay-01.jpg") === "assets/vision/street-replay-01.jpg");
+});
+
+// --- การตั้งค่าฐานข้อมูล: env ของ deployment ต้องมาก่อน ค่า local ต้องยังใช้ได้ ---
+// ทดสอบเฉพาะการอ่านค่า ไม่ได้ต่อฐานข้อมูลจริง
+require __DIR__ . "/../lib/db.php";
+
+function with_db_env(array $env, callable $fn): void
+{
+    $keys = ["MYSQLHOST", "MYSQLPORT", "MYSQLUSER", "MYSQLPASSWORD", "MYSQLDATABASE"];
+    $saved = [];
+    foreach ($keys as $k) {
+        $saved[$k] = getenv($k);
+        putenv($k);
+    }
+    foreach ($env as $k => $v) {
+        putenv("$k=$v");
+    }
+    try {
+        $fn();
+    } finally {
+        foreach ($keys as $k) {
+            $saved[$k] === false ? putenv($k) : putenv("$k={$saved[$k]}");
+        }
+    }
+}
+
+check("ไม่มี env -> ใช้ค่า XAMPP เดิม", function () {
+    with_db_env([], function () {
+        $c = db_config();
+        assert($c["host"] === "127.0.0.1");
+        assert($c["port"] === "3306");
+        assert($c["user"] === "root");
+        assert($c["pass"] === "");
+        assert($c["name"] === "bangsaen_waste");
+    });
+});
+
+check("มี env ของ Railway -> ใช้ค่าจาก env ทั้งหมด", function () {
+    with_db_env([
+        "MYSQLHOST" => "mysql.railway.internal",
+        "MYSQLPORT" => "3306",
+        "MYSQLUSER" => "railway_user",
+        "MYSQLPASSWORD" => "s3cret-from-env",
+        "MYSQLDATABASE" => "railway",
+    ], function () {
+        $c = db_config();
+        assert($c["host"] === "mysql.railway.internal");
+        assert($c["user"] === "railway_user");
+        assert($c["pass"] === "s3cret-from-env");
+        assert($c["name"] === "railway");
+    });
+});
+
+check("ตั้ง env บางตัว -> ตัวที่ไม่ได้ตั้งถอยไปใช้ค่า local", function () {
+    with_db_env(["MYSQLHOST" => "db.example.com"], function () {
+        $c = db_config();
+        assert($c["host"] === "db.example.com");
+        assert($c["port"] === "3306");
+        assert($c["name"] === "bangsaen_waste");
+    });
 });
 
 echo "\n$passed passed, $failed failed\n";

@@ -1,0 +1,40 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# local runtime output (detector worker writes here)
+afternoon/runtime/
+runtime/
+
+# logs / temp
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE / user-local
+# .vscode/settings.json is a workshop file and stays tracked on purpose.
+.idea/
+*.code-workspace
+
+# third-party detector checkout + model weights (107MB, license not verified).
+# Kept locally, never published. See RAILWAY_DEPLOY.md / references note.
+references/pLitter/
+*.pt
+
+# Phase D local video screening outputs / large reference clips
+references/spike/candidate_eval/
+references/test_videos/*.mp4
+references/test_videos/*.mov
+references/test_videos/*.avi
+references/test_videos/*.mkv
+references/test_videos/*.webm

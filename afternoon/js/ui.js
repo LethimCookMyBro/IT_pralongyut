@@ -70,6 +70,14 @@ function formatDateTime(value) {
     return DATE_TIME_FORMAT.format(date);
 }
 
+// เวลาอย่างเดียว ("14:40") สำหรับ timeline ที่เห็นวันที่จากหัวข้ออยู่แล้ว
+function formatTime(value) {
+    if (!value) return '—';
+    const date = new Date(String(value).replace(' ', 'T'));
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+}
+
 /* ---------- Toast ---------- */
 const TOAST_ICON = {
     success: 'icon-check',

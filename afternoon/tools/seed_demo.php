@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . "/../lib/cli_only.php";
+
 /**
  * seed_demo.php — ใส่ "ข้อมูลตัวอย่างสำหรับเดโม" ผ่าน API จริง
  *
@@ -122,6 +124,7 @@ foreach ($incidents as [$camera, $location, $area, $counts, $confidence]) {
             // ความมั่นใจของโมเดล ไม่ใช่ค่าความแม่นยำของระบบ
             'max_confidence' => round($confidence - 0.03 * $i, 2),
             'source_mode' => 'replay',
+            'record_origin' => 'demo_seed',
         ]);
         $created_observations++;
         if ($i === 0 && isset($res['incident']['id'])) {

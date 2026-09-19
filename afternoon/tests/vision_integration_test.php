@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require __DIR__ . "/../lib/cli_only.php";
+
 require __DIR__ . '/../lib/db.php';
 
 $base = 'http://localhost/bangsaen/api';
@@ -46,7 +48,7 @@ function request_json(string $method, string $url, ?array $payload = null): arra
     return [$status, $json];
 }
 
-function post_observation(string $base, string $camera, int $count): array
+function post_observation(string $base, string $camera, int $count, string $recordOrigin = 'demo_seed'): array
 {
     return request_json('POST', "$base/vision.php", [
         'camera_name' => $camera,
@@ -55,12 +57,15 @@ function post_observation(string $base, string $camera, int $count): array
         'detected_count' => $count,
         'max_confidence' => 0.5,
         'source_mode' => 'replay',
+        'record_origin' => $recordOrigin,
     ]);
 }
 
 $incidentA = null;
 $incidentB = null;
 $incidentC = null;
+$incidentIMG = null;
+$incidentC2 = null;
 
 try {
     check('four observations aggregate into one incident', function () use ($base, $prefix, &$incidentA) {
@@ -73,6 +78,10 @@ try {
             }
             if (!isset($json['incident']['id'])) {
                 throw new Exception('missing incident');
+            }
+            if (($json['incident']['record_origin'] ?? null) !== 'demo_seed' ||
+                ($json['observation']['record_origin'] ?? null) !== 'demo_seed') {
+                throw new Exception('default record_origin should be demo_seed');
             }
             $id = (int)$json['incident']['id'];
             if ($incidentA === null) {
@@ -123,6 +132,46 @@ try {
         }
     });
 
+    check('record_origin is persisted and prevents cross-origin aggregation', function () use ($base, $prefix) {
+        $camera = $prefix . 'ORIGIN';
+        [$statusDemo, $demo] = post_observation($base, $camera, 2, 'demo_seed');
+        [$statusReal, $real] = post_observation($base, $camera, 3, 'detector_run');
+
+        if ($statusDemo !== 201 || $statusReal !== 201) {
+            throw new Exception("expected 201 for both origins");
+        }
+        if (($demo['incident']['record_origin'] ?? null) !== 'demo_seed') {
+            throw new Exception('demo incident origin mismatch');
+        }
+        if (($real['incident']['record_origin'] ?? null) !== 'detector_run' ||
+            ($real['observation']['record_origin'] ?? null) !== 'detector_run') {
+            throw new Exception('detector_run origin was not persisted');
+        }
+        if ((int)$demo['incident']['id'] === (int)$real['incident']['id']) {
+            throw new Exception('different record_origin values must not aggregate into one incident');
+        }
+
+        [$detailStatus, $detail] = request_json('GET', "$base/vision-incident.php?id=" . (int)$real['incident']['id']);
+        if ($detailStatus !== 200 || ($detail['incident']['record_origin'] ?? null) !== 'detector_run') {
+            throw new Exception('incident detail did not expose detector_run origin');
+        }
+    });
+
+    check('invalid record_origin is rejected with 422', function () use ($base, $prefix) {
+        [$status, $json] = request_json('POST', "$base/vision.php", [
+            'camera_name' => $prefix . 'BAD-ORIGIN',
+            'location' => 'Test Zone',
+            'area_type' => 'land',
+            'detected_count' => 1,
+            'max_confidence' => 0.5,
+            'source_mode' => 'replay',
+            'record_origin' => 'fake',
+        ]);
+        if ($status !== 422 || !str_starts_with((string)($json['error'] ?? ''), 'record_origin')) {
+            throw new Exception('invalid record_origin should return 422 naming record_origin');
+        }
+    });
+
     check('priority queue keeps higher-observation pending incident ahead', function () use ($base, &$incidentA, &$incidentB) {
         [$status, $json] = request_json('GET', "$base/vision.php?review_status=pending");
         if ($status !== 200) {
@@ -147,6 +196,106 @@ try {
         }
         if ($json['incident'] !== null || $json['observation']['incident_id'] !== null) {
             throw new Exception('zero detection should not create/link incident');
+        }
+    });
+
+    check('observation accepts a known evidence image', function () use ($base, $prefix, &$incidentIMG) {
+        [$status, $json] = request_json('POST', "$base/vision.php", [
+            'camera_name' => $prefix . 'IMG',
+            'location' => 'Test Zone',
+            'area_type' => 'land',
+            'detected_count' => 5,
+            'max_confidence' => 0.5,
+            'source_mode' => 'replay',
+            'image_path' => 'assets/vision/street-replay-01.jpg',
+        ]);
+        if ($status !== 201) {
+            throw new Exception("expected 201, got $status");
+        }
+        if ($json['observation']['image_path'] !== 'assets/vision/street-replay-01.jpg') {
+            throw new Exception('image_path not stored: ' . var_export($json['observation']['image_path'], true));
+        }
+        $incidentIMG = (int)$json['incident']['id'];
+    });
+
+    check('incident detail exposes evidence newest-first', function () use ($base, &$incidentIMG) {
+        [$status, $json] = request_json('GET', "$base/vision-incident.php?id=$incidentIMG");
+        if ($status !== 200) {
+            throw new Exception("expected 200, got $status");
+        }
+        if (!isset($json['evidence']) || !is_array($json['evidence'])) {
+            throw new Exception('missing evidence array');
+        }
+        if (count($json['evidence']) !== 1) {
+            throw new Exception('expected exactly 1 evidence item, got ' . count($json['evidence']));
+        }
+        if ($json['evidence'][0]['image_path'] !== 'assets/vision/street-replay-01.jpg') {
+            throw new Exception('evidence image_path mismatch');
+        }
+    });
+
+    check('observation drill-down returns image_path', function () use ($base, &$incidentIMG) {
+        [$status, $json] = request_json('GET', "$base/vision-observations.php?incident_id=$incidentIMG");
+        if ($status !== 200) {
+            throw new Exception("expected 200, got $status");
+        }
+        if ($json['observations'][0]['image_path'] !== 'assets/vision/street-replay-01.jpg') {
+            throw new Exception('drill-down image_path mismatch');
+        }
+    });
+
+    check('incident without image returns empty evidence', function () use ($base, &$incidentC2) {
+        [$status, $json] = request_json('POST', "$base/vision.php", [
+            'camera_name' => 'NOIMG-' . date('His'),
+            'location' => 'Test Zone',
+            'area_type' => 'land',
+            'detected_count' => 2,
+            'max_confidence' => 0.4,
+            'source_mode' => 'replay',
+        ]);
+        if ($status !== 201) {
+            throw new Exception("expected 201, got $status");
+        }
+        if ($json['observation']['image_path'] !== null) {
+            throw new Exception('image_path should be null when omitted');
+        }
+        $incidentC2 = (int)$json['incident']['id'];
+
+        [$status, $json] = request_json('GET', "$base/vision-incident.php?id=$incidentC2");
+        if ($status !== 200 || $json['evidence'] !== []) {
+            throw new Exception('expected empty evidence array');
+        }
+    });
+
+    check('dangerous image_path values are rejected with 422', function () use ($base, $prefix) {
+        $bad = [
+            'assets/vision/../../lib/db.php',
+            '../assets/vision/street-replay-01.jpg',
+            'javascript:alert(1)',
+            'http://evil.example/x.jpg',
+            '//evil.example/x.jpg',
+            'data:image/png;base64,AAAA',
+            'C:\\xampp\\htdocs\\bangsaen\\index.html',
+            'assets/vision/shell.php',
+            'assets/vision/does-not-exist.jpg',
+            'assets/other/street-replay-01.jpg',
+        ];
+        foreach ($bad as $value) {
+            [$status, $json] = request_json('POST', "$base/vision.php", [
+                'camera_name' => $prefix . 'BAD',
+                'location' => 'Test Zone',
+                'area_type' => 'land',
+                'detected_count' => 1,
+                'max_confidence' => 0.5,
+                'source_mode' => 'replay',
+                'image_path' => $value,
+            ]);
+            if ($status !== 422) {
+                throw new Exception("expected 422 for " . var_export($value, true) . ", got $status");
+            }
+            if (!str_starts_with((string)($json['error'] ?? ''), 'image_path')) {
+                throw new Exception('error should name image_path, got: ' . var_export($json['error'] ?? null, true));
+            }
         }
     });
 
@@ -188,10 +337,12 @@ try {
 } finally {
     // ลบเฉพาะข้อมูล test prefix ของสคริปต์นี้ ไม่แตะข้อมูล demo/user
     $pdo = db();
-    $stmt = $pdo->prepare("DELETE FROM vision_observations WHERE camera_name LIKE :prefix");
-    $stmt->execute(['prefix' => $prefix . '%']);
-    $stmt = $pdo->prepare("DELETE FROM vision_incidents WHERE camera_name LIKE :prefix");
-    $stmt->execute(['prefix' => $prefix . '%']);
+    foreach ([$prefix . '%', 'NOIMG-%'] as $pattern) {
+        $stmt = $pdo->prepare("DELETE FROM vision_observations WHERE camera_name LIKE :prefix");
+        $stmt->execute(['prefix' => $pattern]);
+        $stmt = $pdo->prepare("DELETE FROM vision_incidents WHERE camera_name LIKE :prefix");
+        $stmt->execute(['prefix' => $pattern]);
+    }
 }
 
 echo "\n$passed passed, $failed failed\n";

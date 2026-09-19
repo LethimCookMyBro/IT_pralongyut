@@ -29,6 +29,7 @@ const ACTION_ICON = {
 
 const AREA_LABEL = { land: 'บนบก', water: 'ทางน้ำ' };
 const SOURCE_MODE_LABEL = { replay: 'เล่นซ้ำจากไฟล์ (replay)', camera: 'กล้องทดสอบ', cctv: 'CCTV' };
+const RECORD_ORIGIN_LABEL = { demo_seed: 'ข้อมูลสาธิต', detector_run: 'AI ตรวจจริง' };
 
 // ความมั่นใจของโมเดล ไม่ใช่ค่าความแม่นยำของระบบ
 const fmtConf = (v) => (v === null || v === undefined ? '—' : `${(Number(v) * 100).toFixed(1)}%`);
@@ -36,6 +37,11 @@ const fmtConf = (v) => (v === null || v === undefined ? '—' : `${(Number(v) * 
 function areaTag(value) {
     const icon = value === 'water' ? 'icon-water' : 'icon-land';
     return `<span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#${icon}"></use></svg>${escapeHtml(AREA_LABEL[value] ?? value)}</span>`;
+}
+
+function originTag(value) {
+    const label = RECORD_ORIGIN_LABEL[value] ?? value ?? 'ไม่ทราบที่มา';
+    return `<span class="origin-tag ${escapeHtml(value ?? 'unknown')}">${escapeHtml(label)}</span>`;
 }
 
 // แนวโน้มเทียบจำนวนที่ตรวจพบครั้งแรกกับครั้งล่าสุดของเหตุเดียวกัน

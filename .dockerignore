@@ -1,0 +1,31 @@
+# ลดขนาด build context ของ Railway/Docker
+# หมายเหตุ: ถ้าตั้ง Root Directory = /afternoon ไฟล์นอก afternoon จะไม่ถูกส่งไป build อยู่แล้ว
+# ไฟล์นี้จึงเป็นการกันซ้ำอีกชั้น และช่วยตอน build จาก root
+
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+
+# งานฝั่ง Python / CV — เป็น local demo worker ไม่ได้ deploy
+morning/
+references/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# เอกสารและข้อมูลดิบที่เว็บไม่ได้อ่านตอน runtime
+docs/
+data/
+*.log
+*.tmp
+
+# ผลลัพธ์ที่ detector สร้างบนเครื่อง local
+afternoon/runtime/
+runtime/
+
+# ห้ามใส่ในนี้: afternoon/css, afternoon/js, afternoon/api, afternoon/lib,
+# afternoon/assets (ภาพหลักฐานที่เว็บแสดงจริง), afternoon/sql (ใช้ตอน setup ฐานข้อมูล)

@@ -30,6 +30,7 @@ payload = {
     "detected_count": detected_count,
     "max_confidence": max_confidence,
     "source_mode": "replay",
+    "record_origin": "detector_run",
 }
 
 print("Real detection ->", payload)

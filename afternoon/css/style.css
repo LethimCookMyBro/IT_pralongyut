@@ -43,14 +43,16 @@
     --color-neutral-bg: #e5e7eb;
     --color-neutral-text: #374151;
 
-    /* Type scale — page title > section title > supporting text > table/badge text */
-    --text-xs: 0.75rem;
-    --text-sm: 0.8125rem;
-    --text-base: 0.9375rem;
-    --text-md: 1rem;
-    --text-lg: 1.125rem;
-    --text-xl: 1.375rem;
-    --text-2xl: 1.625rem;
+    /* Type scale — page title > section title > supporting text > table/badge text
+       ขยับขึ้นหนึ่งขั้นทั้งสเกลเพื่อให้อ่านง่ายบนจอ desktop จริง
+       ตัวเล็กสุดคือ 13px ไม่ใช่ 12px และ body อยู่ที่ 16px */
+    --text-xs: 0.8125rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-md: 1.0625rem;
+    --text-lg: 1.25rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 2rem;
 
     /* Spacing scale — used for section/card/form/table rhythm */
     --space-1: 0.25rem;
@@ -76,8 +78,12 @@
     --dur-base: 180ms;
     --ease: cubic-bezier(.4, 0, .2, 1);
 
-    /* Layout */
-    --container-max: 1120px;
+    /* Layout — กว้างขึ้นเพื่อใช้พื้นที่จอ desktop ให้คุ้ม โดยยังไม่ยาวจนอ่านยาก */
+    --container-max: 1320px;
+    /* คอลัมน์ข้อความล้วน (ฟอร์ม/คำอธิบาย) ไม่ควรกว้างตามคอนเทนเนอร์ */
+    --container-narrow: 720px;
+    /* ความสูงขั้นต่ำของปุ่มและช่องกรอก ให้กดง่ายและสูงเท่ากันทั้งระบบ */
+    --control-height: 2.75rem;
     --focus-ring: 0 0 0 3px rgba(15, 118, 110, .35);
 }
 
@@ -235,7 +241,7 @@ main {
 }
 
 section {
-    margin-bottom: var(--space-7);
+    margin-bottom: var(--space-8);
 }
 
 section:last-child {
@@ -402,10 +408,10 @@ table {
 
 th, td {
     text-align: left;
-    padding: 0.7rem 0.9rem;
+    padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-sm);
-    line-height: 1.5;
+    font-size: var(--text-base);
+    line-height: 1.55;
     vertical-align: middle;
 }
 
@@ -462,6 +468,55 @@ td.col-action {
     color: var(--color-text-2);
     font-weight: 600;
     margin-bottom: 0.15rem;
+}
+
+/* ---------- แท็บกลุ่มงาน (ศูนย์ตรวจสอบ) ---------- */
+/* เส้นใต้ + สีหลักสีเดียว ไม่ใช้พื้นหลังสีสถานะ */
+.view-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-3);
+}
+
+.view-tab {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: var(--color-muted);
+    font-size: var(--text-md);
+    font-weight: 600;
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: -1px;
+    gap: var(--space-2);
+}
+
+.view-tab:hover {
+    background: none;
+    color: var(--color-text-2);
+}
+
+.view-tab[aria-selected="true"] {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.view-tab-count {
+    display: inline-block;
+    min-width: 1.75rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-full);
+    background: var(--color-bg-alt);
+    color: var(--color-text-2);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.view-tab[aria-selected="true"] .view-tab-count {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 /* ---------- Filter bar (search + filters) ---------- */
@@ -571,7 +626,8 @@ td.col-action {
 
 /* ---------- Forms ---------- */
 form.report-form {
-    max-width: 34rem;
+    /* ฟอร์มเป็นคอลัมน์ข้อความ ไม่ยืดเต็มความกว้างจอ — อ่านและกรอกง่ายกว่า */
+    max-width: var(--container-narrow);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -599,7 +655,8 @@ label {
 input, select, textarea {
     font: inherit;
     font-size: var(--text-base);
-    padding: 0.6rem 0.75rem;
+    min-height: var(--control-height);
+    padding: 0.6rem 0.8rem;
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
     background: var(--color-surface);
@@ -644,6 +701,29 @@ textarea {
     font-weight: 600;
     color: var(--color-text-2);
     padding: 0 0.35rem;
+}
+
+/* ช่องที่แบบฟอร์มเดิมบังคับ — กรอบบางกว่า ไม่มีพื้นหลัง ให้ดูรองจากสถานที่ */
+.fieldset-secondary {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.fieldset-secondary legend {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-muted);
+    padding: 0 0.35rem;
+}
+
+.fieldset-secondary > label {
+    flex: 1 1 13rem;
+    min-width: 0;
 }
 
 .location-row {
@@ -725,7 +805,8 @@ button, .btn {
     color: var(--color-primary-contrast);
     border: 1px solid var(--color-primary);
     border-radius: var(--radius-sm);
-    padding: 0.55rem 0.95rem;
+    min-height: var(--control-height);
+    padding: 0.55rem 1.1rem;
     cursor: pointer;
     font-weight: 600;
     font-size: var(--text-base);
@@ -747,7 +828,8 @@ button:disabled, .btn:disabled {
 
 .btn-sm {
     font-size: var(--text-sm);
-    padding: 0.35rem 0.65rem;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.8rem;
 }
 
 .btn-ghost {
@@ -1080,6 +1162,25 @@ dialog.confirm-dialog::backdrop {
     color: var(--color-primary);
 }
 
+.origin-tag {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.origin-tag.detector_run {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
 /* สถานที่ในตาราง list: ชื่อจุดเป็นหลัก รายละเอียดรองอยู่ใต้ตัวเล็ก */
 .cell-primary {
     display: block;
@@ -1094,14 +1195,6 @@ dialog.confirm-dialog::backdrop {
 }
 
 /* ---------- Incident detail page ---------- */
-.detail-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-2);
-}
-
 .back-link {
     display: inline-flex;
     align-items: center;
@@ -1109,13 +1202,235 @@ dialog.confirm-dialog::backdrop {
     font-size: var(--text-sm);
     color: var(--color-muted);
     text-decoration: none;
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .back-link:hover {
     color: var(--color-primary);
 }
 
+/* หัวเหตุ: ชื่อเหตุ + สถานะ แล้วตามด้วยสถานที่ซึ่งเป็นสิ่งที่ต้องเห็นก่อน */
+.incident-head {
+    margin-bottom: var(--space-5);
+}
+
+.incident-head-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.incident-head .page-title {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--color-text-2);
+}
+
+.incident-place {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+.incident-subline {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* สองคอลัมน์: หลักฐาน | สรุปเหตุ + ปุ่มตัดสินใจ */
+.incident-main {
+    display: grid;
+    /* ภาพหลักฐานเป็นพระเอกของหน้านี้ จึงให้คอลัมน์ซ้ายกว้างกว่าเดิม */
+    grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+    margin-bottom: var(--space-6);
+}
+
+.incident-block {
+    margin-bottom: var(--space-6);
+}
+
+/* ---------- ภาพหลักฐานจากโมเดล ---------- */
+/* ล้าง margin ของ <section> ทั่วไป: ช่องไฟในกริดมาจาก .incident-main แล้ว */
+.evidence {
+    margin: 0;
+    min-width: 0;
+}
+
+.evidence-figure {
+    margin: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+/* รักษาสัดส่วนเสมอ — ห้าม crop หลักฐานแบบสุ่ม */
+.evidence-figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--color-bg-alt);
+}
+
+.evidence-figure figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-2);
+}
+
+/* บอกที่มาของภาพให้ชัด ไม่ให้เข้าใจผิดว่าเป็นภาพ CCTV เทศบาลจริง */
+.evidence-disclaimer {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+}
+
+.evidence-thumbs {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+}
+
+.evidence-thumb {
+    display: block;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    overflow: hidden;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.evidence-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.evidence-thumb.is-current {
+    border-color: var(--color-primary);
+}
+
+.evidence-thumb:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* ไม่มีรูปก็ต้องใช้งานได้ — ขอบประบอกชัดว่าไม่ใช่ภาพจริง */
+.evidence-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    color: var(--color-muted);
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-md);
+}
+
+.evidence-empty .icon {
+    width: 28px;
+    height: 28px;
+}
+
+.evidence-empty-title {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-text-2);
+}
+
+.evidence-empty .muted {
+    margin: 0;
+    max-width: 40ch;
+}
+
+/* ---------- สรุปเหตุ + action ---------- */
+.incident-summary {
+    margin: 0;
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.summary-list {
+    margin: 0;
+}
+
+.summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.summary-row:first-child {
+    padding-top: 0;
+}
+
+.summary-row:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.summary-row dt {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* ตัวเลขสรุปเด่นได้ แต่ไม่ใหญ่กว่าสถานที่/สถานะ/ปุ่ม */
+.summary-row dd {
+    margin: 0;
+    text-align: right;
+    font-size: var(--text-md);
+    font-weight: 600;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.summary-row .detail-note {
+    max-width: 26ch;
+    margin-left: auto;
+    text-align: right;
+}
+
+.summary-action {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.summary-action .muted {
+    margin: 0;
+}
+
+/* ---------- รายละเอียดเพิ่มเติม / ข้อมูลทางเทคนิค ---------- */
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1149,7 +1464,7 @@ dialog.confirm-dialog::backdrop {
     overflow-wrap: anywhere;
 }
 
-/* หมายเหตุอธิบายค่า (เช่น confidence คืออะไร) */
+/* หมายเหตุอธิบายค่า (เช่น ความมั่นใจของโมเดลคืออะไร) */
 .detail-note {
     display: block;
     font-size: var(--text-xs);
@@ -1158,7 +1473,56 @@ dialog.confirm-dialog::backdrop {
     margin-top: 0.15rem;
 }
 
-/* Timeline ของข้อมูลการตรวจพบ */
+/* disclosure ท้ายหน้า — ข้อมูลเทคนิคไม่ควรแย่งสายตาจากการตัดสินใจ */
+.tech-details {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.tech-details > summary {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-2);
+    cursor: pointer;
+    list-style: none;
+}
+
+.tech-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tech-details > summary::before {
+    content: "+";
+    display: inline-block;
+    width: 1rem;
+    font-weight: 400;
+    color: var(--color-muted);
+}
+
+.tech-details[open] > summary::before {
+    content: "\2212";
+}
+
+.tech-details > summary:focus-visible {
+    outline: none;
+    border-radius: var(--radius-md);
+    box-shadow: var(--focus-ring);
+}
+
+.tech-details-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+.tech-details-body .muted {
+    margin: 0;
+}
+
+/* ---------- Timeline ของข้อมูลการตรวจพบ ---------- */
 .observation-list {
     list-style: none;
     margin: 0;
@@ -1185,22 +1549,70 @@ dialog.confirm-dialog::backdrop {
 }
 
 .observation-time {
+    flex: 0 0 4rem;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: var(--color-text);
+}
+
+.observation-count {
     flex: 0 0 auto;
 }
 
-.observation-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem var(--space-4);
+.observation-count b {
+    font-variant-numeric: tabular-nums;
+}
+
+.observation-conf {
     color: var(--color-muted);
 }
 
-.observation-meta b {
-    color: var(--color-text-2);
-    font-variant-numeric: tabular-nums;
+.observation-flag {
+    margin-left: auto;
+    font-size: var(--text-xs);
+    color: var(--color-primary);
+}
+
+/* จอกลาง: หลักฐานกับสรุปเหตุวางซ้อนกันแทนสองคอลัมน์ */
+@media (max-width: 899px) {
+    .incident-main {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* จอเล็ก (~390px): หัวเหตุ → สถานที่ → สถานะ → รูป → สรุป → action → รายละเอียด → timeline */
+@media (max-width: 767px) {
+    .incident-head {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .incident-head-top {
+        display: contents;
+    }
+
+    .incident-head .page-title {
+        order: 1;
+    }
+
+    .incident-place {
+        order: 2;
+        font-size: var(--text-xl);
+    }
+
+    .incident-status {
+        order: 3;
+        margin-top: var(--space-2);
+    }
+
+    .incident-subline {
+        order: 4;
+    }
+
+    .observation-flag {
+        margin-left: 0;
+    }
 }
 
 /* กล่องเตือนรายการแจ้งซ้ำ */

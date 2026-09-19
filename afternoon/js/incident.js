@@ -38,44 +38,159 @@ async function loadIncident() {
         currentIncident = data.incident;
         errorBox.className = 'msg error hidden';
         detailSection.hidden = false;
-        renderIncident(data.incident, data.aggregation);
+        renderIncident(data.incident, data.aggregation, data.evidence);
         loadObservations(1);
     } catch (err) {
         showLoadError('เชื่อมต่อ API ไม่สำเร็จ');
     }
 }
 
-function renderIncident(incident, aggregation) {
-    document.title = `เหตุ #${incident.id} ${incident.location} — Bangsaen Waste Vision`;
-    document.getElementById('incident-id').textContent = `#${incident.id}`;
-    document.getElementById('incident-status').innerHTML = statusStack(incident);
+/* ---------- ภาพหลักฐานจากโมเดล ---------- */
 
-    const items = [
-        ['สถานที่', escapeHtml(incident.location)],
-        ['จุด/กล้อง', escapeHtml(incident.camera_name)],
-        ['ประเภทพื้นที่', areaTag(incident.area_type)],
-        ['พบครั้งแรก', escapeHtml(formatDateTime(incident.first_seen))],
-        ['พบล่าสุด', escapeHtml(formatDateTime(incident.last_seen))],
-        ['จำนวนครั้งที่พบ', `${Number(incident.observation_count)} ครั้ง`,
-            `รวมจากจุดเดิมภายใน ${Number(aggregation.window_minutes)} นาที`],
-        ['จำนวนสูงสุดที่ตรวจพบ', `${Number(incident.peak_detected_count)} ชิ้น`,
-            `ครั้งล่าสุดตรวจพบ ${Number(incident.latest_detected_count)} ชิ้น`],
-        ['แนวโน้ม', trendTag(incident), 'เทียบครั้งแรกกับครั้งล่าสุด ไม่ใช่การพยากรณ์'],
-        ['ความมั่นใจของโมเดล (สูงสุด)', escapeHtml(fmtConf(incident.max_confidence)),
-            'เป็นความมั่นใจของโมเดล ไม่ใช่ค่าความแม่นยำของระบบ'],
-        ['ที่มาของภาพ', escapeHtml(SOURCE_MODE_LABEL[incident.source_mode] ?? incident.source_mode),
-            'ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง'],
-        ['เวลาที่คนตรวจ', escapeHtml(incident.reviewed_at ? formatDateTime(incident.reviewed_at) : 'ยังไม่ตรวจ')],
-        ['เวลาที่ปิดงาน', escapeHtml(incident.resolved_at ? formatDateTime(incident.resolved_at) : 'ยังไม่ปิดงาน')],
-    ];
+// ป้องกันชั้นที่สอง: ถึง API จะกรองมาแล้ว ก็ไม่ยอมใส่ path แปลก ๆ ลงใน src
+const EVIDENCE_PATH_RE = /^assets\/vision\/[A-Za-z0-9][A-Za-z0-9._-]*\.(jpg|jpeg|png|webp)$/i;
 
-    document.getElementById('detail-grid').innerHTML = items
+const safeEvidencePath = (p) => (typeof p === 'string' && EVIDENCE_PATH_RE.test(p) ? p : null);
+
+let currentEvidence = [];
+
+function renderEvidence(evidence) {
+    const body = document.getElementById('evidence-body');
+    currentEvidence = (Array.isArray(evidence) ? evidence : [])
+        .filter((item) => safeEvidencePath(item.image_path));
+
+    // ไม่มีรูป = บอกตรง ๆ ห้ามใส่ placeholder ที่ดูเหมือนภาพจริง
+    if (currentEvidence.length === 0) {
+        body.innerHTML = `
+            <div class="evidence-empty">
+                ${icon('icon-camera')}
+                <p class="evidence-empty-title">ยังไม่มีภาพหลักฐานสำหรับเหตุนี้</p>
+                <p class="muted">การตรวจพบของเหตุนี้ไม่ได้แนบภาพไว้ — ดูจำนวนที่ตรวจพบและเวลาได้จากประวัติการตรวจพบด้านล่าง</p>
+            </div>`;
+        return;
+    }
+
+    const main = currentEvidence[0];
+    const thumbs = currentEvidence.length > 1
+        ? `<ul class="evidence-thumbs">${currentEvidence.map((item, i) => `
+            <li>
+                <button type="button" class="evidence-thumb${i === 0 ? ' is-current' : ''}"
+                        data-evidence-index="${i}"
+                        aria-label="ดูภาพจากการตรวจพบเวลา ${escapeHtml(formatDateTime(item.captured_at))}">
+                    <img src="${escapeHtml(safeEvidencePath(item.image_path))}" alt="">
+                </button>
+            </li>`).join('')}</ul>`
+        : '';
+
+    body.innerHTML = `
+        <figure class="evidence-figure">
+            <img id="evidence-image" src="${escapeHtml(safeEvidencePath(main.image_path))}"
+                 alt="ภาพจากการตรวจพบด้วยโมเดล มีกรอบล้อมวัตถุที่โมเดลตรวจพบ">
+            <figcaption>
+                <span id="evidence-caption"></span>
+                <span class="evidence-disclaimer">
+                    ภาพจากการตรวจพบด้วยโมเดลในโหมด Replay · ยังไม่ใช่ภาพจาก CCTV เทศบาลจริง
+                </span>
+            </figcaption>
+        </figure>
+        ${thumbs}`;
+
+    setEvidenceCaption(0);
+}
+
+function setEvidenceCaption(index) {
+    const item = currentEvidence[index];
+    if (!item) return;
+    document.getElementById('evidence-caption').textContent =
+        `ตรวจพบ ${Number(item.detected_count)} ชิ้น · ${formatDateTime(item.captured_at)}`;
+}
+
+document.getElementById('evidence-body').addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-evidence-index]');
+    if (!button) return;
+    const index = Number(button.dataset.evidenceIndex);
+    const item = currentEvidence[index];
+    const path = item && safeEvidencePath(item.image_path);
+    if (!path) return;
+
+    document.getElementById('evidence-image').src = path;
+    setEvidenceCaption(index);
+    document.querySelectorAll('.evidence-thumb').forEach((el, i) => {
+        el.classList.toggle('is-current', i === index);
+    });
+});
+
+/* ---------- เนื้อหาหลักของหน้า ---------- */
+
+function detailRows(items) {
+    return items
         .map(([label, value, note]) => `
             <div class="detail-item">
                 <dt>${escapeHtml(label)}</dt>
                 <dd>${value}${note ? `<span class="detail-note">${escapeHtml(note)}</span>` : ''}</dd>
             </div>`)
         .join('');
+}
+
+function renderIncident(incident, aggregation, evidence) {
+    document.title = `เหตุ #${incident.id} ${incident.location} — Bangsaen Waste Vision`;
+    document.getElementById('incident-id').textContent = `#${incident.id}`;
+    document.getElementById('incident-status').innerHTML = statusStack(incident);
+
+    // สถานที่คือสิ่งที่ต้องเห็นก่อน ไม่ใช่ field หนึ่งในตาราง
+    document.getElementById('incident-place').textContent = incident.location;
+    document.getElementById('incident-subline').textContent =
+        `${incident.camera_name} · พบล่าสุด ${formatDateTime(incident.last_seen)}`;
+
+    const originBanner = document.getElementById('origin-banner-text');
+    if (incident.record_origin === 'detector_run') {
+        originBanner.innerHTML = 'โหมดเล่นซ้ำ (replay) — เหตุนี้มาจาก <strong>AI ที่รันจริงบนวิดีโออ้างอิง</strong> แต่ยังไม่ใช่ CCTV เทศบาลจริงและไม่ใช่เหตุจริงจากบางแสน';
+    } else {
+        originBanner.innerHTML = 'โหมดเล่นซ้ำ (replay) — เหตุนี้เป็น <strong>ข้อมูลสาธิต</strong> สำหรับทดสอบระบบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง และไม่ใช่เหตุจริงจากบางแสน';
+    }
+
+    renderEvidence(evidence);
+
+    // สรุปเหตุ: ตัวเลขที่ใช้ตัดสินใจ 4 ค่า
+    const summary = [
+        ['พบทั้งหมด', `${Number(incident.observation_count)} ครั้ง`],
+        ['จำนวนสูงสุด', `${Number(incident.peak_detected_count)} ชิ้น`],
+        ['แนวโน้ม', trendTag(incident)],
+        ['ความมั่นใจของโมเดล', escapeHtml(fmtConf(incident.max_confidence)),
+            'เป็นค่าประกอบการตรวจสอบ ไม่ใช่ค่าความแม่นยำของระบบ'],
+    ];
+    document.getElementById('summary-list').innerHTML = summary
+        .map(([label, value, note]) => `
+            <div class="summary-row">
+                <dt>${escapeHtml(label)}</dt>
+                <dd>${value}${note ? `<span class="detail-note">${escapeHtml(note)}</span>` : ''}</dd>
+            </div>`)
+        .join('');
+
+    // รายละเอียดเพิ่มเติม: ข้อมูลระดับรอง
+    document.getElementById('detail-grid').innerHTML = detailRows([
+        ['พบครั้งแรก', escapeHtml(formatDateTime(incident.first_seen))],
+        ['พบล่าสุด', escapeHtml(formatDateTime(incident.last_seen))],
+        ['ประเภทพื้นที่', areaTag(incident.area_type)],
+        ['จุด/กล้อง', escapeHtml(incident.camera_name)],
+        ['แหล่งภาพ', escapeHtml(SOURCE_MODE_LABEL[incident.source_mode] ?? incident.source_mode),
+            'ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง'],
+        ['ที่มาของข้อมูล', originTag(incident.record_origin),
+            incident.record_origin === 'detector_run' ? 'ผลจากโมเดลจริงบนวิดีโออ้างอิง' : 'ข้อมูลที่สร้างไว้เพื่อสาธิต workflow'],
+    ]);
+
+    // ทางเทคนิค: อยู่ใน <details> ไม่แย่งสายตา
+    document.getElementById('tech-grid').innerHTML = detailRows([
+        ['หมายเลขเหตุ', `#${Number(incident.id)}`],
+        ['จำนวนที่พบครั้งแรก', `${Number(incident.first_detected_count)} ชิ้น`],
+        ['จำนวนที่พบครั้งล่าสุด', `${Number(incident.latest_detected_count)} ชิ้น`],
+        ['กติกาการรวมเหตุ', `รวมจากจุดเดิมภายใน ${Number(aggregation.window_minutes)} นาที`,
+            'PROTOTYPE / UNCALIBRATED — ยังไม่ได้ปรับค่ากับพื้นที่จริง'],
+        ['source mode', escapeHtml(incident.source_mode)],
+        ['record origin', escapeHtml(incident.record_origin ?? 'unknown')],
+        ['เวลาที่คนตรวจ', escapeHtml(incident.reviewed_at ? formatDateTime(incident.reviewed_at) : 'ยังไม่ตรวจ')],
+        ['เวลาที่ปิดงาน', escapeHtml(incident.resolved_at ? formatDateTime(incident.resolved_at) : 'ยังไม่ปิดงาน')],
+    ]);
 
     renderActions(incident);
 }
@@ -108,7 +223,7 @@ function renderActions(incident) {
     const row = document.getElementById('action-row');
 
     if (incident.review_status === 'pending') {
-        note.textContent = 'เหตุนี้ยังไม่ผ่านการตรวจของคน — ตรวจข้อมูลด้านบนและข้อมูลการตรวจพบด้านล่างก่อนตัดสิน';
+        note.textContent = 'ยังไม่ผ่านการตรวจของคน — ดูภาพและข้อมูลด้านบนก่อนตัดสิน';
         row.innerHTML = `
             <button type="button" data-action="confirm">
                 <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>ยืนยันเหตุ
@@ -120,7 +235,7 @@ function renderActions(incident) {
     }
 
     if (incident.review_status === 'confirmed' && incident.action_status !== 'resolved') {
-        note.textContent = 'ยืนยันแล้ว รอการดำเนินการในพื้นที่ — กดปุ่มนี้เมื่อจัดการจุดนี้เรียบร้อย';
+        note.textContent = 'ยืนยันแล้ว — รอดำเนินการในพื้นที่ กดปุ่มนี้เมื่อจัดการจุดนี้เรียบร้อย';
         row.innerHTML = `
             <button type="button" data-action="resolve">
                 <svg class="icon" aria-hidden="true"><use href="#icon-resolve"></use></svg>ทำเครื่องหมายว่าดำเนินการแล้ว
@@ -186,19 +301,17 @@ async function loadObservations(page) {
 
         const observations = Array.isArray(data.observations) ? data.observations : [];
         document.getElementById('observation-note').textContent = observations.length === 0
-            ? 'ไม่มีรายการตรวจพบที่ผูกกับเหตุนี้'
+            ? 'ไม่มีข้อมูลการตรวจพบที่ผูกกับเหตุนี้'
             : 'แต่ละบรรทัดคือการตรวจพบหนึ่งครั้งจากโมเดล เรียงตามเวลา — เป็นหลักฐานประกอบ ไม่ใช่คิวให้ตรวจทีละรายการ';
 
         list.innerHTML = observations.length === 0
             ? '<li class="observation-item muted">ไม่มีข้อมูลการตรวจพบ</li>'
             : observations.map((o) => `
                 <li class="observation-item">
-                    <span class="observation-time">${escapeHtml(formatDateTime(o.captured_at))}</span>
-                    <span class="observation-meta">
-                        <span>ตรวจพบ <b>${Number(o.detected_count)}</b> ชิ้น</span>
-                        <span>ความมั่นใจของโมเดล <b>${escapeHtml(fmtConf(o.max_confidence))}</b></span>
-                        <span>${escapeHtml(SOURCE_MODE_LABEL[o.source_mode] ?? o.source_mode)}</span>
-                    </span>
+                    <span class="observation-time">${escapeHtml(formatTime(o.captured_at))}</span>
+                    <span class="observation-count">พบ <b>${Number(o.detected_count)}</b> ชิ้น</span>
+                    <span class="observation-conf">ความมั่นใจของโมเดล ${escapeHtml(fmtConf(o.max_confidence))}</span>
+                    ${o.image_path ? '<span class="observation-flag">มีภาพ</span>' : ''}
                 </li>`).join('');
 
         renderPagination(observationPagination, data.pagination, loadObservations);
