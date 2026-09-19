@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/../lib/db.php';
 require __DIR__ . '/../lib/response.php';
 require __DIR__ . '/../lib/vision_config.php';
+require __DIR__ . '/../lib/pagination.php';
 
 const VALID_AREA_TYPES = ["land", "water"];
 const VALID_SOURCE_MODES = ["replay", "camera", "cctv"];
@@ -85,25 +86,42 @@ function get_vision(): void
         $review_status = validate_filter($_GET['review_status'] ?? null, VALID_REVIEW_STATUSES, 'review_status');
         $action_status = validate_filter($_GET['action_status'] ?? null, VALID_ACTION_STATUSES, 'action_status');
         $area_type = validate_filter($_GET['area_type'] ?? null, VALID_AREA_TYPES, 'area_type');
+        $paging = pagination_params($_GET);
     } catch (InvalidArgumentException $e) {
         json_error($e->getMessage(), 422);
     }
 
-    $sql = "SELECT * FROM vision_incidents WHERE 1=1";
+    // ค้นหาจากสถานที่ หรือชื่อกล้อง/จุดตรวจ
+    $search = search_like_pattern($_GET['q'] ?? null);
+
+    $where = " WHERE 1=1";
     $params = [];
 
+    if ($search !== null) {
+        $where .= " AND (location LIKE :search_location OR camera_name LIKE :search_camera)";
+        $params['search_location'] = $search;
+        $params['search_camera'] = $search;
+    }
+
     if ($review_status !== null) {
-        $sql .= " AND review_status = :review_status";
+        $where .= " AND review_status = :review_status";
         $params['review_status'] = $review_status;
     }
     if ($action_status !== null) {
-        $sql .= " AND action_status = :action_status";
+        $where .= " AND action_status = :action_status";
         $params['action_status'] = $action_status;
     }
     if ($area_type !== null) {
-        $sql .= " AND area_type = :area_type";
+        $where .= " AND area_type = :area_type";
         $params['area_type'] = $area_type;
     }
+
+    // total นับด้วย filter/search ชุดเดียวกับที่ใช้ดึงรายการ เพื่อให้ pagination ตรงกัน
+    $count = $pdo->prepare("SELECT COUNT(*) FROM vision_incidents$where");
+    $count->execute($params);
+    $total = (int)$count->fetchColumn();
+
+    $sql = "SELECT * FROM vision_incidents$where";
 
     // Priority Queue แบบอธิบายได้:
     // pending ก่อน จากนั้น observation_count -> peak_detected_count -> recency
@@ -117,12 +135,16 @@ function get_vision(): void
         CASE WHEN review_status = 'pending' THEN observation_count END DESC,
         CASE WHEN review_status = 'pending' THEN peak_detected_count END DESC,
         last_seen DESC,
-        id DESC
-        LIMIT 50";
+        id DESC";
+
+    // LIMIT/OFFSET แทรกเป็นตัวเลขตรง ๆ ได้ เพราะ pagination_params ตรวจเป็น int > 0 มาแล้ว
+    $limit = $paging['per_page'];
+    $offset = $paging['offset'];
+    $sql .= " LIMIT $limit OFFSET $offset";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    $incidents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $incidents = array_map('cast_incident_row', $stmt->fetchAll(PDO::FETCH_ASSOC));
 
     $summary = $pdo->query(
         "SELECT
@@ -148,7 +170,18 @@ function get_vision(): void
         'priority_rule' => 'pending first; observation_count desc; peak_detected_count desc; last_seen desc',
         'summary' => $summary,
         'incidents' => $incidents,
+        'pagination' => pagination_meta($paging['page'], $paging['per_page'], $total),
     ]);
+}
+
+// PDO คืนตัวเลขทั้งหมดเป็น string — cast ให้ frontend ไม่ต้องเดาชนิดข้อมูล
+function cast_incident_row(array $row): array
+{
+    foreach (['id', 'observation_count', 'first_detected_count', 'latest_detected_count', 'peak_detected_count'] as $field) {
+        $row[$field] = (int)$row[$field];
+    }
+    $row['max_confidence'] = $row['max_confidence'] !== null ? (float)$row['max_confidence'] : null;
+    return $row;
 }
 
 function post_vision(): void

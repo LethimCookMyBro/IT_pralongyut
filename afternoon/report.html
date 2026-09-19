@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f766e">
+    <meta name="theme-color" content="#ffffff">
     <title>แจ้งจุดขยะ — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,62 +11,98 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
-        <defs>
-            <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-            <symbol id="icon-flag" viewBox="0 0 24 24"><path d="M5 21V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M5 4h13l-3.5 4L18 12H5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
-            <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="5 12.5 10 17.5 19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-            <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><polyline points="12 7 12 12 15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-arrow-right" viewBox="0 0 24 24"><line x1="4" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="13 6 19 12 13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="42 100"/></symbol>
-        </defs>
-    </svg>
-
     <header class="site">
-        <h1>Bangsaen Waste Vision</h1>
-        <nav class="site">
-            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>หน้าสถิติ</a>
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
-            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Waste Vision</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
         </nav>
     </header>
 
     <main>
         <section>
-            <h2 class="page-title">แจ้งจุดขยะ</h2>
-            <p class="muted">ช่องทางเสริม ไม่ใช่แหล่งข้อมูลหลักเพียงอย่างเดียวของระบบ</p>
+            <h1 class="page-title">แจ้งจุดขยะ</h1>
+            <p class="muted">ช่องทางเสริมสำหรับประชาชนและเจ้าหน้าที่ ไม่ใช่แหล่งข้อมูลหลักเพียงอย่างเดียวของระบบ<br>
+                ดูรายการที่แจ้งไว้แล้วได้ที่หน้า <a href="reports.html">รายการแจ้ง</a></p>
 
-            <form class="report-form" id="report-form">
-                <div class="msg hidden" id="form-msg"></div>
+            <form class="report-form" id="report-form" novalidate>
+                <div class="msg hidden" id="form-msg" role="alert"></div>
 
-                <label>
-                    สถานที่
-                    <input type="text" name="location" id="location" required minlength="3" maxlength="100"
-                           placeholder="เช่น หาดบางแสน หน้าโค้งวงเวียน">
-                </label>
+                <!-- Phase B: เลือกสถานที่ได้ 3 ทาง — เลือกพื้นที่ / ใช้ตำแหน่งปัจจุบัน / พิมพ์เอง
+                     ไม่ขอสิทธิ์ GPS ตอนเปิดหน้า ขอเมื่อผู้ใช้กดปุ่มเท่านั้น -->
+                <fieldset class="fieldset-location">
+                    <legend>สถานที่เกิดเหตุ</legend>
 
-                <label>
+                    <div class="location-row">
+                        <label class="field" for="preset-location">เลือกพื้นที่
+                            <select id="preset-location"></select>
+                        </label>
+                        <button type="button" class="btn-ghost btn-sm" id="gps-btn">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-crosshair"></use></svg>
+                            <span>ใช้ตำแหน่งปัจจุบัน</span>
+                        </button>
+                    </div>
+
+                    <p class="location-status" id="location-status" hidden>
+                        <svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>
+                        <span class="location-status-body">
+                            <span id="location-status-text"></span>
+                            <span class="location-coords" id="location-coords" hidden></span>
+                            <span class="btn-row" id="location-confirm-row" hidden>
+                                <button type="button" class="btn-sm" id="gps-confirm-btn">ใช้ตำแหน่งนี้</button>
+                                <button type="button" class="btn-ghost btn-sm" id="gps-cancel-btn">ไม่ใช้</button>
+                            </span>
+                        </span>
+                    </p>
+
+                    <span class="location-or">หรือพิมพ์สถานที่เอง</span>
+                    <label for="location">
+                        <span class="visually-hidden">ชื่อสถานที่</span>
+                        <input type="text" name="location" id="location" required minlength="3" maxlength="100"
+                               placeholder="เช่น หาดบางแสน หน้าโค้งวงเวียน" autocomplete="off">
+                        <span class="field-hint">แก้ไขข้อความนี้ได้เสมอ ไม่ว่าจะเลือกพื้นที่หรือใช้ตำแหน่งปัจจุบัน</span>
+                    </label>
+
+                    <p class="location-summary" id="location-summary">ที่มาของตำแหน่ง: <strong>พิมพ์เอง</strong></p>
+                    <input type="hidden" name="latitude" id="latitude" value="">
+                    <input type="hidden" name="longitude" id="longitude" value="">
+                    <input type="hidden" name="location_source" id="location_source" value="manual">
+                </fieldset>
+
+                <label for="waste_type">
                     ประเภทขยะ
                     <select name="waste_type" id="waste_type" required>
-                        <option value="general">ทั่วไป (general)</option>
-                        <option value="recyclable">รีไซเคิล (recyclable)</option>
-                        <option value="hazardous">อันตราย (hazardous)</option>
-                        <option value="organic">อินทรีย์ (organic)</option>
+                        <option value="general">ทั่วไป</option>
+                        <option value="recyclable">รีไซเคิล</option>
+                        <option value="hazardous">อันตราย</option>
+                        <option value="organic">อินทรีย์</option>
                     </select>
                 </label>
 
-                <label>
+                <label for="amount_kg">
                     ปริมาณโดยประมาณ (กก.)
                     <input type="number" name="amount_kg" id="amount_kg" required min="1" max="1000" step="1">
+                    <span class="field-hint">ประมาณคร่าว ๆ ได้ ระหว่าง 1–1000 กก.</span>
                 </label>
 
-                <label>
+                <label for="detail">
                     รายละเอียด
                     <textarea name="detail" id="detail" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"></textarea>
                     <span class="char-counter" id="detail-counter">0 / 500</span>
                 </label>
+
+                <!-- Phase H: เตือนรายการที่อาจซ้ำ ไม่บล็อกการส่ง -->
+                <div class="duplicate-warning" id="duplicate-warning" hidden>
+                    <h3><svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg> บริเวณนี้อาจมีรายการแจ้งอยู่แล้ว</h3>
+                    <p class="muted" id="duplicate-note"></p>
+                    <ul class="duplicate-list" id="duplicate-list"></ul>
+                    <div class="btn-row">
+                        <button type="button" class="btn-sm" id="duplicate-submit-btn">ยืนยันส่งรายการใหม่</button>
+                        <a class="btn btn-ghost btn-sm" id="duplicate-view-link" href="reports.html">ดูรายการเดิม</a>
+                    </div>
+                </div>
 
                 <button type="submit">
                     <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
@@ -74,28 +110,10 @@
                 </button>
             </form>
         </section>
-
-        <section>
-            <h2>รายการแจ้งล่าสุด</h2>
-            <div class="table-wrap">
-                <table id="reports-table">
-                    <thead>
-                        <tr>
-                            <th>สถานที่</th>
-                            <th>ประเภท</th>
-                            <th>ปริมาณ (กก.)</th>
-                            <th>รายละเอียด</th>
-                            <th>สถานะ</th>
-                            <th>เวลาแจ้ง</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
     <script src="js/ui.js"></script>
+    <script src="js/locations.js"></script>
     <script src="js/report.js"></script>
 </body>
 </html>

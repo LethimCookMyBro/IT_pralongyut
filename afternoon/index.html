@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f766e">
-    <title>Bangsaen Waste Vision — สถิติขยะ</title>
+    <meta name="theme-color" content="#ffffff">
+    <title>สถิติขยะ — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
-        <defs>
-            <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-            <symbol id="icon-flag" viewBox="0 0 24 24"><path d="M5 21V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M5 4h13l-3.5 4L18 12H5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
-            <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="5 12.5 10 17.5 19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-            <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><polyline points="12 7 12 12 15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-        </defs>
-    </svg>
-
     <header class="site">
-        <h1>Bangsaen Waste Vision</h1>
-        <nav class="site">
-            <a href="index.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>หน้าสถิติ</a>
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
-            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Waste Vision</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
         </nav>
     </header>
 
     <main>
         <section>
-            <h2 id="stats-heading" class="page-title">สถิติขยะจังหวัดชลบุรี — ปี <span id="stats-year">…</span></h2>
-            <p class="muted">ข้อมูลเปิดจาก <a href="https://chonburi.gdcatalog.go.th/dataset/?organization=chonburi_mnre" target="_blank" rel="noopener">Chonburi Open Data</a></p>
+            <h1 class="page-title">สถิติขยะจังหวัดชลบุรี</h1>
+            <p class="muted">ข้อมูลเปิดจาก <a href="https://chonburi.gdcatalog.go.th/dataset/?organization=chonburi_mnre" target="_blank" rel="noopener">Chonburi Open Data</a> — ตัวเลขทั้งหมดเป็นหน่วยตันต่อวัน</p>
+
+            <div class="section-head">
+                <h2>ภาพรวมปี <span id="stats-year">…</span></h2>
+                <label class="field" for="year-select">ปีข้อมูล
+                    <select id="year-select" disabled>
+                        <option>กำลังโหลด…</option>
+                    </select>
+                </label>
+            </div>
+
             <div class="card-grid" id="summary-cards">
                 <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
                 <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
@@ -51,8 +51,8 @@
                             <th>อันดับ</th>
                             <th>อปท.</th>
                             <th>อำเภอ</th>
-                            <th>ขยะที่เกิดขึ้น (ตัน/วัน)</th>
-                            <th>อัตรากำจัดถูกต้อง</th>
+                            <th class="num">ขยะที่เกิดขึ้น</th>
+                            <th class="num">อัตรากำจัดถูกต้อง</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -62,18 +62,20 @@
 
         <section>
             <h2>ทุก อปท. ในปีที่เลือก</h2>
-            <div class="table-wrap">
+            <!-- ตารางนี้มี 8 คอลัมน์ตัวเลข เลื่อนแนวนอนได้ตามจำเป็น (scroll-x)
+                 ต่างจากตาราง list หลักที่ต้องอ่านได้ครบในจอ desktop -->
+            <div class="table-wrap scroll-x">
                 <table id="rows-table">
                     <thead>
                         <tr>
                             <th>อปท.</th>
                             <th>อำเภอ</th>
-                            <th>เกิดขึ้น</th>
-                            <th>เก็บขน</th>
-                            <th>ใช้ประโยชน์</th>
-                            <th>ถูกต้อง</th>
-                            <th>ไม่ถูกต้อง</th>
-                            <th>อัตราถูกต้อง</th>
+                            <th class="num">เกิดขึ้น</th>
+                            <th class="num">เก็บขน</th>
+                            <th class="num">ใช้ประโยชน์</th>
+                            <th class="num">ถูกต้อง</th>
+                            <th class="num">ไม่ถูกต้อง</th>
+                            <th class="num">อัตราถูกต้อง</th>
                         </tr>
                     </thead>
                     <tbody></tbody>

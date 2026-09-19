@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>รายละเอียดเหตุ — Bangsaen Waste Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site">
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
+            <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="vision.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+        </nav>
+    </header>
+
+    <main>
+        <a class="back-link" href="vision.html">
+            <svg class="icon" aria-hidden="true"><use href="#icon-arrow-left"></use></svg>กลับไปคิวเหตุที่ต้องตรวจสอบ
+        </a>
+
+        <div class="msg error hidden" id="load-error" role="alert"></div>
+
+        <section id="incident-detail" hidden>
+            <div class="detail-header">
+                <h1 class="page-title">เหตุที่อาจเป็นจุดขยะ <span class="muted num" id="incident-id"></span></h1>
+                <span id="incident-status"></span>
+            </div>
+            <p class="muted">
+                <span class="term-en">Possible Waste Incident</span> — เกิดจากการรวมข้อมูลการตรวจพบหลายครั้งจากจุดเดียวกัน
+                ไม่ใช่การยืนยันว่ามีขยะจริง คนตรวจเป็นผู้ตัดสิน
+            </p>
+
+            <h2>ข้อมูลหลัก</h2>
+            <dl class="detail-grid" id="detail-grid"></dl>
+
+            <section>
+                <div class="section-head">
+                    <h2>สิ่งที่ทำได้ตอนนี้</h2>
+                </div>
+                <p class="muted" id="action-note"></p>
+                <div class="btn-row" id="action-row"></div>
+            </section>
+
+            <section>
+                <div class="section-head">
+                    <h2>ข้อมูลการตรวจพบ <span class="term-en">raw observations</span></h2>
+                </div>
+                <p class="muted" id="observation-note"></p>
+                <ol class="observation-list" id="observation-list"></ol>
+                <nav class="pagination" id="observation-pagination"></nav>
+            </section>
+        </section>
+    </main>
+
+    <script src="js/ui.js"></script>
+    <script src="js/vision-common.js"></script>
+    <script src="js/incident.js"></script>
+</body>
+</html>

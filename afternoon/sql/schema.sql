@@ -21,15 +21,22 @@ CREATE TABLE waste_stats (
 );
 
 -- ตารางเดิม: จุดแจ้งขยะจากประชาชน/เจ้าหน้าที่
+-- latitude/longitude/location_source เพิ่มใน migrations/001_reports_location.sql
+-- ที่นี่ใส่ไว้ให้ fresh install ได้โครงเดียวกันกับฐานที่ migrate แล้ว
 DROP TABLE IF EXISTS reports;
 CREATE TABLE reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     location VARCHAR(100) NOT NULL,
+    latitude DECIMAL(10,7) NULL,
+    longitude DECIMAL(10,7) NULL,
+    location_source ENUM('preset','gps','manual') NOT NULL DEFAULT 'manual',
     waste_type VARCHAR(20) NOT NULL,
     amount_kg INT NOT NULL,
     detail VARCHAR(500) NOT NULL DEFAULT '',
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_reports_latlng (latitude, longitude),
+    INDEX idx_reports_listing (status, waste_type, created_at)
 );
 
 -- Waste Vision:

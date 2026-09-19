@@ -3,40 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f766e">
-    <title>Waste Vision Dashboard — Bangsaen Waste Vision</title>
+    <meta name="theme-color" content="#ffffff">
+    <title>ศูนย์ตรวจสอบ — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
-        <defs>
-            <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-            <symbol id="icon-flag" viewBox="0 0 24 24"><path d="M5 21V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M5 4h13l-3.5 4L18 12H5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
-            <symbol id="icon-camera" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M8 7l1.6-2.4A1 1 0 0 1 10.4 4h3.2a1 1 0 0 1 .8.6L16 7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="13.5" r="3.4" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
-            <symbol id="icon-warning" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19L12 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><line x1="12" y1="9.5" x2="12" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></symbol>
-            <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="5 12.5 10 17.5 19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-            <symbol id="icon-resolve" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><polyline points="7.5 12.5 10.5 15.5 16.5 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-trend-up" viewBox="0 0 24 24"><polyline points="3 16 9 10 13 14 21 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="14 5 21 5 21 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-trend-down" viewBox="0 0 24 24"><polyline points="3 8 9 14 13 10 21 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="14 19 21 19 21 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-trend-flat" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="16 8 21 12 16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-            <symbol id="icon-land" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="9" y1="12" x2="9" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="6" y1="20" x2="12" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-            <symbol id="icon-water" viewBox="0 0 24 24"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></symbol>
-            <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><polyline points="12 7 12 12 15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-        </defs>
-    </svg>
-
     <header class="site">
-        <h1>Bangsaen Waste Vision</h1>
-        <nav class="site">
-            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>หน้าสถิติ</a>
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
-            <a href="vision.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Waste Vision</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="vision.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
         </nav>
     </header>
 
@@ -44,21 +25,20 @@
         <section>
             <div class="replay-banner">
                 <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                <span>REPLAY MODE — ใช้ภาพอ้างอิงทดสอบระบบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง</span>
+                <span>โหมดเล่นซ้ำ (replay) — ใช้ภาพอ้างอิงทดสอบระบบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง</span>
             </div>
             <div class="replay-banner warning">
                 <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                <span>PROTOTYPE / UNCALIBRATED — ระบบรวม Raw Observations จากกล้อง/จุดเดียวกันภายในช่วงเวลา Demo ก่อนสร้าง Incident ให้คนตรวจ</span>
+                <span>ต้นแบบ ยังไม่ปรับเทียบ (PROTOTYPE / UNCALIBRATED) — ระบบรวมข้อมูลการตรวจพบจากกล้อง/จุดเดียวกันภายในช่วงเวลาหนึ่งก่อนสร้างเหตุให้คนตรวจ</span>
             </div>
-            <h2 class="page-title">Incident Queue</h2>
+
+            <h1 class="page-title">คิวเหตุที่ต้องตรวจสอบ</h1>
             <p class="muted">
-                Raw detection / observation ไม่เท่ากับ incident และไม่เท่ากับงานของเจ้าหน้าที่
-                Dashboard นี้ให้คนตรวจ Incident ที่ระบบรวมแล้ว เพื่อลดการแจ้งซ้ำจากหลาย frame
+                ข้อมูลการตรวจพบรายครั้ง (raw observation) ไม่เท่ากับหนึ่งเหตุ และไม่เท่ากับหนึ่งงานของเจ้าหน้าที่
+                หน้านี้ให้คนตรวจ “เหตุ” ที่ระบบรวมแล้ว เพื่อลดการแจ้งซ้ำจากภาพหลายเฟรม
+                <span class="term-en">observation ≠ incident ≠ task</span>
             </p>
-            <p class="muted" id="priority-note">
-                Priority แบบอธิบายได้: Pending ก่อน แล้วเรียงตามจำนวน observations, peak detected count และความล่าสุด
-                ไม่มี weighted score และยังไม่ได้ calibrate กับพื้นที่บางแสน
-            </p>
+
             <div class="card-grid" id="summary-cards">
                 <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
                 <div class="card card-skeleton"><span class="skeleton-bar skeleton-bar-sm"></span><span class="skeleton-bar skeleton-bar-lg"></span></div>
@@ -67,35 +47,63 @@
         </section>
 
         <section>
-            <h2>Possible Waste Incidents</h2>
-            <p class="muted">
-                Flow: Raw Observations → Event Aggregation → Incident → Human Confirm/Reject
-                → ถ้า Confirm = NEEDS CHECK → RESOLVED หลังดำเนินการ
+            <div class="section-head">
+                <h2>รายการเหตุที่อาจเป็นจุดขยะ</h2>
+            </div>
+            <p class="muted" id="priority-note">
+                ลำดับความสำคัญอธิบายได้: รอตรวจสอบมาก่อน แล้วเรียงตามจำนวนครั้งที่พบ จำนวนสูงสุดที่ตรวจพบ และความล่าสุด
+                ไม่มีการให้คะแนนถ่วงน้ำหนัก และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
             </p>
+
+            <form class="filter-bar" id="filter-bar" role="search">
+                <label class="field field-search" for="filter-q">ค้นหาสถานที่หรือชื่อกล้อง
+                    <input type="search" id="filter-q" name="q" placeholder="เช่น หาดบางแสน, CAM-01" autocomplete="off">
+                </label>
+                <label class="field" for="filter-status">สถานะ
+                    <select id="filter-status" name="status">
+                        <option value="">ทั้งหมด</option>
+                        <option value="pending">รอตรวจสอบ</option>
+                        <option value="needs_check">ต้องดำเนินการ</option>
+                        <option value="resolved">เสร็จแล้ว</option>
+                        <option value="rejected">ปฏิเสธ</option>
+                    </select>
+                </label>
+                <label class="field" for="filter-area">ประเภทพื้นที่
+                    <select id="filter-area" name="area_type">
+                        <option value="">ทั้งหมด</option>
+                        <option value="land">บนบก</option>
+                        <option value="water">ทางน้ำ</option>
+                    </select>
+                </label>
+                <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+            </form>
+
+            <!-- Phase D: คิวเหลือเฉพาะข้อมูลที่ใช้ตัดสินใจว่าจะเปิดดูอันไหน
+                 ข้อมูลเทคนิค (พบครั้งแรก / จำนวนสูงสุด / ประเภทพื้นที่ /
+                 ความมั่นใจของโมเดล / ข้อมูลการตรวจพบ) ย้ายไปหน้ารายละเอียด -->
             <div class="table-wrap">
-                <table id="vision-table">
+                <table id="vision-table" class="as-cards">
                     <thead>
                         <tr>
-                            <th>พบครั้งแรก</th>
-                            <th>พบล่าสุด</th>
-                            <th>กล้อง/จุด</th>
                             <th>สถานที่</th>
-                            <th>พื้นที่</th>
-                            <th>Observations</th>
-                            <th>Peak / ล่าสุด</th>
-                            <th>Trend</th>
-                            <th>Confidence สูงสุด</th>
+                            <th>จุด/กล้อง</th>
+                            <th>พบล่าสุด</th>
+                            <th class="num">จำนวนครั้งที่พบ</th>
+                            <th>แนวโน้ม</th>
                             <th>สถานะ</th>
-                            <th>การจัดการ</th>
+                            <th><span class="visually-hidden">ดูรายละเอียด</span></th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
+
+            <nav class="pagination" id="vision-pagination"></nav>
         </section>
     </main>
 
     <script src="js/ui.js"></script>
+    <script src="js/vision-common.js"></script>
     <script src="js/vision.js"></script>
 </body>
 </html>
