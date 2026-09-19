@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f766e">
+    <title>แจ้งจุดขยะ — Bangsaen Waste Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+        <defs>
+            <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="20" x2="22" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+            <symbol id="icon-flag" viewBox="0 0 24 24"><path d="M5 21V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M5 4h13l-3.5 4L18 12H5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
+            <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
+            <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="5 12.5 10 17.5 19 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+            <symbol id="icon-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+            <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/><polyline points="12 7 12 12 15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+            <symbol id="icon-arrow-right" viewBox="0 0 24 24"><line x1="4" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="13 6 19 12 13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+            <symbol id="icon-spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="42 100"/></symbol>
+        </defs>
+    </svg>
+
+    <header class="site">
+        <h1>Bangsaen Waste Vision</h1>
+        <nav class="site">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>หน้าสถิติ</a>
+            <a href="report.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
+            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Waste Vision</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2 class="page-title">แจ้งจุดขยะ</h2>
+            <p class="muted">ช่องทางเสริม ไม่ใช่แหล่งข้อมูลหลักเพียงอย่างเดียวของระบบ</p>
+
+            <form class="report-form" id="report-form">
+                <div class="msg hidden" id="form-msg"></div>
+
+                <label>
+                    สถานที่
+                    <input type="text" name="location" id="location" required minlength="3" maxlength="100"
+                           placeholder="เช่น หาดบางแสน หน้าโค้งวงเวียน">
+                </label>
+
+                <label>
+                    ประเภทขยะ
+                    <select name="waste_type" id="waste_type" required>
+                        <option value="general">ทั่วไป (general)</option>
+                        <option value="recyclable">รีไซเคิล (recyclable)</option>
+                        <option value="hazardous">อันตราย (hazardous)</option>
+                        <option value="organic">อินทรีย์ (organic)</option>
+                    </select>
+                </label>
+
+                <label>
+                    ปริมาณโดยประมาณ (กก.)
+                    <input type="number" name="amount_kg" id="amount_kg" required min="1" max="1000" step="1">
+                </label>
+
+                <label>
+                    รายละเอียด
+                    <textarea name="detail" id="detail" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"></textarea>
+                    <span class="char-counter" id="detail-counter">0 / 500</span>
+                </label>
+
+                <button type="submit">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                    <span>ส่งเรื่องแจ้ง</span>
+                </button>
+            </form>
+        </section>
+
+        <section>
+            <h2>รายการแจ้งล่าสุด</h2>
+            <div class="table-wrap">
+                <table id="reports-table">
+                    <thead>
+                        <tr>
+                            <th>สถานที่</th>
+                            <th>ประเภท</th>
+                            <th>ปริมาณ (กก.)</th>
+                            <th>รายละเอียด</th>
+                            <th>สถานะ</th>
+                            <th>เวลาแจ้ง</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/ui.js"></script>
+    <script src="js/report.js"></script>
+</body>
+</html>

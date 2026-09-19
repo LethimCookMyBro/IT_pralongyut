@@ -1,0 +1,22 @@
+name: Bangsaen Waste Watch Workshop
+version: 1.0.0
+schema: v1
+models:
+  - name: Qwen2.5-Coder 7B
+    provider: ollama
+    model: qwen2.5-coder:7b
+    apiBase: http://127.0.0.1:11434   # เครื่องอื่นในกลุ่มเปลี่ยนเป็น IP เครื่องหลัก
+    roles: [chat, edit, apply]
+    defaultCompletionOptions:
+      contextLength: 8192
+      maxTokens: 4096
+      temperature: 0.1
+  - name: Qwen2.5-Coder 1.5B (สำรอง)
+    provider: ollama
+    model: qwen2.5-coder:1.5b
+    apiBase: http://127.0.0.1:11434
+    roles: [chat, edit, apply]
+    defaultCompletionOptions:
+      contextLength: 8192
+      maxTokens: 4096
+      temperature: 0.1

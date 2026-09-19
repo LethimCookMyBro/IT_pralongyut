@@ -1,0 +1,8 @@
+File: floating_litter_water.jpg
+Source: Nature's Silent Struggle.jpg
+URL: https://commons.wikimedia.org/wiki/File:Nature%E2%80%99s_Silent_Struggle.jpg
+Author: Jemir Shamir (Wikimedia Commons user)
+License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+Attribution required: yes — credit "Jemir Shamir", CC BY-SA 4.0, via Wikimedia Commons
+Usage: real unannotated photo used for pLitter floating/CCTV model detection spike (Phase 3)
+Downloaded: 2026-09-19

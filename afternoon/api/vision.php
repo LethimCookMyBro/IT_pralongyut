@@ -1,0 +1,292 @@
+<?php
+declare(strict_types=1);
+
+require __DIR__ . '/../lib/db.php';
+require __DIR__ . '/../lib/response.php';
+require __DIR__ . '/../lib/vision_config.php';
+
+const VALID_AREA_TYPES = ["land", "water"];
+const VALID_SOURCE_MODES = ["replay", "camera", "cctv"];
+const VALID_REVIEW_STATUSES = ["pending", "confirmed", "rejected"];
+const VALID_ACTION_STATUSES = ["none", "needs_check", "resolved"];
+
+function validate_vision_observation(array $data): array
+{
+    $camera_name = $data["camera_name"] ?? null;
+    if (!is_string($camera_name)) {
+        throw new InvalidArgumentException("camera_name: ต้องเป็น string");
+    }
+    $camera_name = trim($camera_name);
+    if (mb_strlen($camera_name) < 1 || mb_strlen($camera_name) > 100) {
+        throw new InvalidArgumentException("camera_name: ยาวต้อง 1-100 ตัวอักษร");
+    }
+
+    $location = $data["location"] ?? null;
+    if (!is_string($location)) {
+        throw new InvalidArgumentException("location: ต้องเป็น string");
+    }
+    $location = trim($location);
+    if (mb_strlen($location) < 1 || mb_strlen($location) > 100) {
+        throw new InvalidArgumentException("location: ยาวต้อง 1-100 ตัวอักษร");
+    }
+
+    $area_type = $data["area_type"] ?? null;
+    if (!is_string($area_type) || !in_array($area_type, VALID_AREA_TYPES, true)) {
+        throw new InvalidArgumentException("area_type: ต้องเป็นหนึ่งใน " . implode(", ", VALID_AREA_TYPES));
+    }
+
+    $detected_count = $data["detected_count"] ?? null;
+    if (is_bool($detected_count) || !is_int($detected_count) || $detected_count < 0) {
+        throw new InvalidArgumentException("detected_count: ต้องเป็นจำนวนเต็ม >= 0");
+    }
+
+    $max_confidence = $data["max_confidence"] ?? null;
+    if ($max_confidence !== null) {
+        if (is_bool($max_confidence) || !is_numeric($max_confidence)) {
+            throw new InvalidArgumentException("max_confidence: ต้องเป็นตัวเลข");
+        }
+        $max_confidence = (float)$max_confidence;
+        if ($max_confidence < 0 || $max_confidence > 1) {
+            throw new InvalidArgumentException("max_confidence: ต้องอยู่ช่วง 0-1");
+        }
+    }
+
+    $source_mode = $data["source_mode"] ?? "replay";
+    if (!is_string($source_mode) || !in_array($source_mode, VALID_SOURCE_MODES, true)) {
+        throw new InvalidArgumentException("source_mode: ต้องเป็นหนึ่งใน " . implode(", ", VALID_SOURCE_MODES));
+    }
+
+    return [
+        "camera_name" => $camera_name,
+        "location" => $location,
+        "area_type" => $area_type,
+        "detected_count" => $detected_count,
+        "max_confidence" => $max_confidence,
+        "source_mode" => $source_mode,
+    ];
+}
+
+function validate_filter(?string $value, array $allowed, string $name): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+    if (!in_array($value, $allowed, true)) {
+        throw new InvalidArgumentException("$name: ค่าไม่ถูกต้อง");
+    }
+    return $value;
+}
+
+function get_vision(): void
+{
+    $pdo = db();
+
+    try {
+        $review_status = validate_filter($_GET['review_status'] ?? null, VALID_REVIEW_STATUSES, 'review_status');
+        $action_status = validate_filter($_GET['action_status'] ?? null, VALID_ACTION_STATUSES, 'action_status');
+        $area_type = validate_filter($_GET['area_type'] ?? null, VALID_AREA_TYPES, 'area_type');
+    } catch (InvalidArgumentException $e) {
+        json_error($e->getMessage(), 422);
+    }
+
+    $sql = "SELECT * FROM vision_incidents WHERE 1=1";
+    $params = [];
+
+    if ($review_status !== null) {
+        $sql .= " AND review_status = :review_status";
+        $params['review_status'] = $review_status;
+    }
+    if ($action_status !== null) {
+        $sql .= " AND action_status = :action_status";
+        $params['action_status'] = $action_status;
+    }
+    if ($area_type !== null) {
+        $sql .= " AND area_type = :area_type";
+        $params['area_type'] = $area_type;
+    }
+
+    // Priority Queue แบบอธิบายได้:
+    // pending ก่อน จากนั้น observation_count -> peak_detected_count -> recency
+    // ไม่มี weighted score และไม่มีการ claim ว่า calibrated/validated.
+    $sql .= " ORDER BY
+        CASE
+            WHEN review_status = 'pending' THEN 0
+            WHEN review_status = 'confirmed' AND action_status = 'needs_check' THEN 1
+            ELSE 2
+        END,
+        CASE WHEN review_status = 'pending' THEN observation_count END DESC,
+        CASE WHEN review_status = 'pending' THEN peak_detected_count END DESC,
+        last_seen DESC,
+        id DESC
+        LIMIT 50";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $incidents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $summary = $pdo->query(
+        "SELECT
+            COUNT(*) AS total,
+            SUM(review_status = 'pending') AS pending_review,
+            SUM(review_status = 'confirmed') AS confirmed,
+            SUM(review_status = 'rejected') AS rejected,
+            SUM(action_status = 'needs_check') AS needs_check,
+            SUM(action_status = 'resolved') AS resolved
+         FROM vision_incidents"
+    )->fetch(PDO::FETCH_ASSOC);
+
+    foreach ($summary as $k => $v) {
+        $summary[$k] = (int)$v;
+    }
+
+    json_response([
+        'aggregation' => [
+            'window_minutes' => INCIDENT_AGGREGATION_WINDOW_MINUTES,
+            'status' => 'PROTOTYPE / UNCALIBRATED',
+            'rule' => 'same camera/location/area/source + pending incident within time window',
+        ],
+        'priority_rule' => 'pending first; observation_count desc; peak_detected_count desc; last_seen desc',
+        'summary' => $summary,
+        'incidents' => $incidents,
+    ]);
+}
+
+function post_vision(): void
+{
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        json_error("Invalid JSON", 400);
+    }
+
+    try {
+        $clean = validate_vision_observation($data);
+    } catch (InvalidArgumentException $e) {
+        json_error($e->getMessage(), 422);
+    }
+
+    $pdo = db();
+    $pdo->beginTransaction();
+
+    try {
+        $incident_id = null;
+        $aggregated = false;
+
+        // detected_count = 0 เก็บเป็น raw observation ได้ แต่ไม่สร้าง Possible Waste Incident
+        if ($clean['detected_count'] > 0) {
+            $window = (int)INCIDENT_AGGREGATION_WINDOW_MINUTES;
+            $find = $pdo->prepare(
+                "SELECT id
+                 FROM vision_incidents
+                 WHERE camera_name = :camera_name
+                   AND location = :location
+                   AND area_type = :area_type
+                   AND source_mode = :source_mode
+                   AND review_status = 'pending'
+                   AND last_seen >= DATE_SUB(NOW(), INTERVAL $window MINUTE)
+                 ORDER BY last_seen DESC, id DESC
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+            $find->execute([
+                'camera_name' => $clean['camera_name'],
+                'location' => $clean['location'],
+                'area_type' => $clean['area_type'],
+                'source_mode' => $clean['source_mode'],
+            ]);
+            $existing = $find->fetch(PDO::FETCH_ASSOC);
+
+            if ($existing) {
+                $incident_id = (int)$existing['id'];
+                $update = $pdo->prepare(
+                    "UPDATE vision_incidents
+                     SET last_seen = NOW(),
+                         observation_count = observation_count + 1,
+                         latest_detected_count = :detected_count,
+                         peak_detected_count = GREATEST(peak_detected_count, :detected_count_peak),
+                         max_confidence = CASE
+                             WHEN :max_confidence_check IS NULL THEN max_confidence
+                             WHEN max_confidence IS NULL THEN :max_confidence_new
+                             ELSE GREATEST(max_confidence, :max_confidence_peak)
+                         END
+                     WHERE id = :id"
+                );
+                $update->execute([
+                    'detected_count' => $clean['detected_count'],
+                    'detected_count_peak' => $clean['detected_count'],
+                    'max_confidence_check' => $clean['max_confidence'],
+                    'max_confidence_new' => $clean['max_confidence'],
+                    'max_confidence_peak' => $clean['max_confidence'],
+                    'id' => $incident_id,
+                ]);
+                $aggregated = true;
+            } else {
+                $create = $pdo->prepare(
+                    "INSERT INTO vision_incidents
+                        (camera_name, location, area_type, source_mode,
+                         first_seen, last_seen, observation_count,
+                         first_detected_count, latest_detected_count, peak_detected_count,
+                         max_confidence)
+                     VALUES
+                        (:camera_name, :location, :area_type, :source_mode,
+                         NOW(), NOW(), 1,
+                         :first_detected_count, :latest_detected_count, :peak_detected_count,
+                         :max_confidence)"
+                );
+                $create->execute([
+                    'camera_name' => $clean['camera_name'],
+                    'location' => $clean['location'],
+                    'area_type' => $clean['area_type'],
+                    'source_mode' => $clean['source_mode'],
+                    'first_detected_count' => $clean['detected_count'],
+                    'latest_detected_count' => $clean['detected_count'],
+                    'peak_detected_count' => $clean['detected_count'],
+                    'max_confidence' => $clean['max_confidence'],
+                ]);
+                $incident_id = (int)$pdo->lastInsertId();
+            }
+        }
+
+        $observation = $pdo->prepare(
+            "INSERT INTO vision_observations
+                (incident_id, camera_name, location, area_type, detected_count, max_confidence, source_mode)
+             VALUES
+                (:incident_id, :camera_name, :location, :area_type, :detected_count, :max_confidence, :source_mode)"
+        );
+        $observation->execute(['incident_id' => $incident_id] + $clean);
+        $observation_id = (int)$pdo->lastInsertId();
+
+        $obs_stmt = $pdo->prepare("SELECT * FROM vision_observations WHERE id = :id");
+        $obs_stmt->execute(['id' => $observation_id]);
+        $observation_row = $obs_stmt->fetch(PDO::FETCH_ASSOC);
+
+        $incident_row = null;
+        if ($incident_id !== null) {
+            $incident_stmt = $pdo->prepare("SELECT * FROM vision_incidents WHERE id = :id");
+            $incident_stmt->execute(['id' => $incident_id]);
+            $incident_row = $incident_stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $pdo->commit();
+
+        json_response([
+            'observation' => $observation_row,
+            'incident' => $incident_row,
+            'aggregated_into_existing_incident' => $aggregated,
+        ], 201);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+}
+
+try {
+    match ($_SERVER['REQUEST_METHOD']) {
+        'GET' => get_vision(),
+        'POST' => post_vision(),
+        default => json_error("Method Not Allowed", 405),
+    };
+} catch (PDOException $e) {
+    json_error("database error", 500);
+}

@@ -1,0 +1,6 @@
+litter_singapore_ecp.jpg
+Source: https://commons.wikimedia.org/wiki/File:Litter_on_Singapore%27s_East_Coast_Park.jpg
+Author: vaidehi shah (Flickr), via Flickr2Commons
+License: CC BY 2.0 (Creative Commons Attribution 2.0 Generic)
+Used here for a one-off local computer-vision inference test (Bangsaen Waste Vision PoC).
+No modification other than resizing for inference, if any.
