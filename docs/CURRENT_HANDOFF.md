@@ -48,8 +48,9 @@ Railway service:
 - database: `MySQL`
 - region: Southeast Asia
 
-Deployment ที่ verify หลัง Phase D:
-`e6275971-c3c1-4292-a8d9-90cc77654907` → SUCCESS
+Railway deployment ID จะเปลี่ยนทุกครั้งที่ push (แม้เป็น docs-only push)
+จึงไม่ล็อก ID ไว้ใน handoff นี้ ให้ใช้ `railway status` / `railway deployment list`
+ตรวจ active deployment ล่าสุด; หลัง Phase D และการ push เอกสารล่าสุด service ถูก verify ว่า **SUCCESS / Online**
 
 ---
 
@@ -107,6 +108,14 @@ Headless Chrome public detect ตรวจแล้ว:
 - REPLAY MODE / PROTOTYPE แสดง
 - detector แสดง offline เพราะ Railway ไม่มี local Python worker
 - หน้าไม่พัง
+
+Remote write smoke test ตรวจแล้วด้วย row prefix เฉพาะ:
+- POST report → HTTP 201
+- POST detector observation (`replay + detector_run`) → HTTP 201
+- Confirm incident → HTTP 200 / `needs_check`
+- Resolve incident → HTTP 200 / `resolved`
+- cleanup ลบเฉพาะ smoke rows สำเร็จ: observation 1, incident 1, report 1
+- หลัง cleanup Railway DB กลับสู่ข้อมูลก่อน smoke test
 
 ---
 

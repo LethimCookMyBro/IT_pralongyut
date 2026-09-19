@@ -64,9 +64,9 @@ observations across different `record_origin` values. reject is terminal; confir
 is what unlocks needs_check → resolve.
 
 reports also has latitude / longitude (both NULL-able) and location_source
-(preset | gps | manual, default preset). Added by
+(preset | gps | manual, default manual). Added by
 afternoon/sql/migrations/001_reports_location.sql (ALTER TABLE, keeps old
-rows; old rows get location_source = preset and NULL coordinates).
+rows; old rows get location_source = manual and NULL coordinates).
 schema.sql already contains the same columns for a fresh install.
 Migrations are additive only — never DROP or recreate a live table.
 

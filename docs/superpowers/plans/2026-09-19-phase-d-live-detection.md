@@ -34,6 +34,7 @@ State before execution: Phase A/B/C verified; Video 1/2 approved; Railway web ex
 - Webcam permission remains click-only.
 - Tests: PHP 80/0, Vision 15/0, List/API 29/0, Python 5 OK, all JS/PHP syntax checks passed.
 - Phase D implementation committed/pushed as `9b48116`.
-- Railway deployment `e6275971-c3c1-4292-a8d9-90cc77654907` verified SUCCESS.
+- Railway service latest deployment was verified SUCCESS/Online after push; deployment IDs are intentionally not pinned here because every push creates a new one.
+- Remote write smoke also passed: report 201, detector observation 201, confirm 200, resolve 200; exact smoke rows were then removed.
 
 Remaining items are municipal-pilot/production hardening, not Phase D blockers.

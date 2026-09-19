@@ -125,6 +125,8 @@ Local detector และ Railway web แยกหน้าที่กันโ�
 | Railway `/api/vision.php` | 200 |
 | Railway `/api/live-detection.php` | 200 + offline state ตามจริง |
 | Railway `/detect.html` | 200 |
+| Railway report write smoke | POST 201 แล้ว cleanup exact test row |
+| Railway detector observation write smoke | POST 201; Confirm 200; Resolve 200; cleanup exact test rows |
 | Public seed/tests URLs | 404 ตามที่กำหนด |
 
 Railway database ที่ตรวจ:
