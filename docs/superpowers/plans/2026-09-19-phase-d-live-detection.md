@@ -16,3 +16,24 @@ State before execution: Phase A/B/C verified; Video 1/2 approved; Railway web ex
 10. Webcam permission is requested only after an explicit user click.
 11. Existing PHP/Python/JS tests plus new live-detection tests pass.
 12. Browser verify localhost and Railway, then commit/push/deploy and re-verify.
+
+## Execution result — 2026-09-19
+
+**COMPLETE for Workshop Demo scope.**
+
+- Railway root cause verified: deployed PHP had PDO but no `pdo_mysql`.
+- Added `afternoon/composer.json`; Railpack build installed `pdo_mysql` + `mbstring`.
+- Public Stats / Reports / Vision APIs now return HTTP 200.
+- Railway DB verified with 24 `waste_stats` rows and required `record_origin` schema.
+- Implemented local worker + live endpoint + Detect page.
+- Road / city / water all ran real pLitter inference; each source successfully POSTed detector observations.
+- Event Aggregation merged repeated detector observations instead of creating a task per frame.
+- Evidence files are pruned to a bounded count.
+- Local Detect page rendered the annotated frame and live metadata.
+- Railway Detect page rendered the intentional offline state without breaking.
+- Webcam permission remains click-only.
+- Tests: PHP 80/0, Vision 15/0, List/API 29/0, Python 5 OK, all JS/PHP syntax checks passed.
+- Phase D implementation committed/pushed as `9b48116`.
+- Railway deployment `e6275971-c3c1-4292-a8d9-90cc77654907` verified SUCCESS.
+
+Remaining items are municipal-pilot/production hardening, not Phase D blockers.

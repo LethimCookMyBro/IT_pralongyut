@@ -129,6 +129,7 @@ Prototype ใช้ภาพอ้างอิงสำหรับทดสอ�
 - `POST /api/vision.php` — รับผลตรวจจาก Local Computer Vision
 - `GET /api/vision-observations.php?incident_id=...` — ดูผลตรวจที่อยู่ในเหตุหนึ่ง
 - `POST /api/vision-review.php` — Confirm / Reject / Resolve เหตุ
+- `GET /api/live-detection.php` — อ่านสถานะและผลล่าสุดของ Local detector worker โดยไม่แตะฐานข้อมูล
 
 ---
 
@@ -156,7 +157,9 @@ Prototype ใช้ภาพอ้างอิงสำหรับทดสอ�
 6. Dashboard แสดงเหตุที่รอตรวจได้
 7. เจ้าหน้าที่ Confirm / Reject ได้
 8. เหตุที่ Confirm แล้วสามารถเปลี่ยนเป็น Resolved ได้
-9. หน้าเว็บระบุ **REPLAY MODE** และ **PROTOTYPE / UNCALIBRATED** ชัดเจน
+9. หน้า `detect.html` แสดงเฟรมล่าสุด/ผล inference จาก Local worker ได้เมื่อ worker ทำงาน
+10. เมื่อไม่มี worker (เช่น Railway) หน้า `detect.html` ต้องยังเปิดได้และบอกสถานะตามจริงว่า Local AI ไม่ได้ทำงานบน deployment นั้น
+11. หน้าเว็บระบุ **REPLAY MODE** และ **PROTOTYPE / UNCALIBRATED** ชัดเจน
 
 ---
 
@@ -179,9 +182,11 @@ Prototype ใช้ภาพอ้างอิงสำหรับทดสอ�
 - PHP validation tests ผ่าน
 - Stats ใช้ข้อมูลจริงจากฐานข้อมูล
 - Report บันทึกและอ่านข้อมูลได้
-- Waste Vision รัน detector จริงอย่างน้อย 1 ภาพ
-- ผล detector เข้า MySQL ได้
+- Waste Vision รัน detector จริงอย่างน้อย 1 แหล่งภาพ/วิดีโอ
+- Local worker เขียนผลล่าสุดแบบ atomic และหน้า `detect.html` อ่านได้
+- ผล detector เข้า MySQL ได้ด้วย `record_origin = detector_run`
 - ระบบรวมการตรวจซ้ำเป็น Incident ได้
 - Human Review ทำงานที่ระดับ Incident
 - Demo ทำงานผ่าน localhost
+- Railway web/API หลักเปิดได้ โดย detector แสดง offline ตามจริงเมื่อไม่มี Local worker
 - ไม่มีข้อความหรือ claim เกินสิ่งที่พิสูจน์แล้ว

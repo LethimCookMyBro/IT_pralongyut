@@ -112,6 +112,17 @@ Two setup scripts, and they are not interchangeable:
   (127.0.0.1 / 3306 / root / "" / bangsaen_waste), so the same code runs locally
   and on Railway. Never hardcode a deployment password here.
 - afternoon/lib/response.php — sets display_errors=0 unless APP_DEBUG=1.
+- afternoon/lib/live_detection.php — validates/reads the local worker runtime contract
+  from `afternoon/runtime/vision/latest.json`; returns live/stale/offline without DB.
+- afternoon/api/live-detection.php — read-only GET endpoint for the detector status.
+- afternoon/detect.html + afternoon/js/detect.js — Local AI status/annotated-frame page.
+  It polls the read-only endpoint and asks for webcam permission only after a user click.
+- local_vision/worker.py — local-only continuous pLitter replay worker. Loads one model
+  once, atomically writes latest.jpg/latest.json, POSTs bounded observations to
+  api/vision.php as `replay + detector_run`, and keeps only a bounded number of
+  evidence images. Do not deploy torch/model weights to Railway.
+- afternoon/composer.json — declares PHP runtime extensions including ext-pdo_mysql
+  and ext-mbstring so Railway/Railpack installs the drivers used by the APIs.
 - afternoon/index.php — minimal entry point (readfile of index.html) so Railpack
   detects a PHP app. Do not duplicate UI in it.
 
@@ -125,6 +136,7 @@ Pages:
   amount_kg is still required — the workshop and its tests depend on it.
 - reports.html + js/reports.js + api/reports.php — full report list with
   search/filters/pagination
+- detect.html + js/detect.js + api/live-detection.php — local detector viewer/status
 - vision.html / incident.html — incident queue and incident detail
 
 vision.html splits work into three groups instead of one mixed list, so the
@@ -152,12 +164,14 @@ api/reports.php / lib/validate.php.
 ## Notes
 - System is still prototype / replay mode
 - Do not claim real CCTV integration
-- Do not claim validated deployment
+- The public Railway demo deployment has been technically verified for the PHP/MySQL
+  web/API path, but that is not a validated municipal/production deployment
 - Do not change backend architecture unless there is a real bug
-- Current pre-Phase-D rows are labeled `record_origin = demo_seed`. `source_mode`
-  describes where imagery came from (`replay|camera|cctv`), while `record_origin`
-  describes how the row was created (`demo_seed|detector_run`). Keep those concepts
-  separate: a real detector run on a reference video is `replay + detector_run`.
+- Pre-Phase-D seeded rows are labeled `record_origin = demo_seed`. Phase D real
+  pLitter replay runs use `record_origin = detector_run`. `source_mode` describes
+  where imagery came from (`replay|camera|cctv`), while `record_origin` describes
+  how the row was created (`demo_seed|detector_run`). Keep those concepts separate:
+  a real detector run on a reference video is `replay + detector_run`.
   vision.html/incident.html surface this distinction, while still stating that no
   municipal Bangsaen CCTV is connected. A judge must never read seed data as a real incident.
 - Railway: deploy the PHP+MySQL web app only (see RAILWAY_DEPLOY.md, root
@@ -195,4 +209,8 @@ Useful commands:
 - C:\xampp\php\php.exe afternoon\tests\list_api_test.php
   (hits the running Apache; inserts only prefixed rows and deletes exactly those)
 - node --check on every file in afternoon\js\ (ui, app, report, reports, vision,
-  vision-common, incident, locations)
+  vision-common, incident, locations, detect)
+- C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road --max-inferences 3 --no-post --no-loop
+- GET http://localhost/bangsaen/api/live-detection.php while worker is running
+- Railway: GET /api/stats.php, /api/reports.php, /api/vision.php and
+  /api/live-detection.php; /tools/seed_demo.php and /tests/*.php must stay 404
