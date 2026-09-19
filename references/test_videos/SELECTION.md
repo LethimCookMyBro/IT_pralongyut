@@ -46,7 +46,9 @@
 
 G 9736659 — Trashes Flowing on a Lake
 - model: pLitterFloat
-- smoke test เดิม: 6 → 9 → 11 detections
+- local file: `references/test_videos/water-9736659.mp4` (gitignored)
+- worker smoke test ล่าสุด: 7 → 5 → 7 detections ใน 3 เฟรมแรก
+- POST จริง 2 observation ได้ HTTP 201 และถูก Event Aggregation รวมเป็นเหตุเดียว
 - slot: ขยะในน้ำ / ทะเล
 
 ## Final demo source set
@@ -56,4 +58,4 @@ G 9736659 — Trashes Flowing on a Lake
 3. ขยะในน้ำ/ทะเล → G 9736659 → pLitterFloat
 
 Annotated samples + summaries อยู่ใน `references/spike/candidate_eval/`.
-ยังไม่ wire เข้า `detect.html` ณ จุดที่เขียนเอกสารนี้
+ชุด source ทั้ง 3 ตัวถูก wire เข้า Phase D แล้ว; ไฟล์วิดีโอและ model weights ยังถูกเก็บ local และไม่ publish ขึ้น Git

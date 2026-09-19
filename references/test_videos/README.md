@@ -19,8 +19,10 @@ Video 2 — ขยะริมถนน
 Video 3 — ขยะในน้ำ / ทะเล
 - G 9736659 — Trashes Flowing on a Lake
 - source: https://www.pexels.com/video/trashes-flowing-on-a-lake-9736659/
+- local file (gitignored): `water-9736659.mp4`
 - model: pLitterFloat
-- smoke test เดิมที่ยืนยันแล้ว: 6 → 9 → 11 detections
+- worker smoke test ล่าสุด: **7 → 5 → 7 detections** ใน 3 เฟรมแรก
+- POST เข้า Incident Pipeline จริง 2 ครั้งได้ HTTP 201 และรวมเป็น Incident เดียวตาม aggregation
 
 Google Drive:
 https://drive.google.com/drive/folders/1QlFQWKCQrnaox6GdKqPPQUZP6kbJOu7P
@@ -55,4 +57,4 @@ C:\tmp\cv_venv\Scripts\python.exe references\spike\evaluate_video_candidate.py ^
 
 สคริปต์นี้ไม่ POST API, ไม่สร้าง Incident และไม่แตะฐานข้อมูล
 
-ก่อน wire คลิปเข้า `detect.html` ต้องดู annotated frames ด้วยตาและอนุมัติ Video 1/2 ก่อน
+Video 1/2 ได้รับอนุมัติแล้วและถูก wire เข้า Phase D; Video 3 ถูกดาวน์โหลดจากแหล่งที่ล็อกไว้และ verify ด้วย pLitterFloat จริงแล้ว

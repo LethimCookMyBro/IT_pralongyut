@@ -40,6 +40,10 @@ Service → **Settings** → **Root Directory** → ใส่ `afternoon`
 โปรเจกต์นี้มี `afternoon/index.php` ไว้ให้แล้ว (ไฟล์เล็ก ๆ ที่ส่ง `index.html` ออกไป
 ไม่ได้ทำ UI ซ้ำ และ URL หน้าเดิมทุกหน้ายังใช้ได้เหมือนเดิม)
 
+`afternoon/composer.json` ประกาศ `ext-pdo_mysql` และ `ext-mbstring` ไว้ด้วย
+เพื่อให้ Railpack ติดตั้ง PHP extension ที่ API ใช้จริงบน Railway อัตโนมัติ
+(ถ้าไม่มี `pdo_mysql` หน้าเว็บจะโหลดได้แต่ API ฐานข้อมูลจะตอบ 500)
+
 ### 5. เพิ่ม MySQL service
 
 ในโปรเจกต์เดียวกัน → **New** → **Database** → **Add MySQL**
@@ -97,7 +101,9 @@ Service → **Settings** → **Networking** → **Generate Domain**
 | `/api/stats.php` | JSON สถิติ (มีข้อมูล 24 แถวหลังรัน `railway_init.sql`) |
 | `/api/reports.php` | JSON รายการแจ้งเหตุ + `pagination` |
 | `/api/vision.php` | JSON คิวเหตุการณ์ + `summary` |
+| `/api/live-detection.php` | JSON สถานะ Local detector; บน Railway ควรเป็น `offline` แบบสุภาพ |
 | `/reports.html` | หน้ารายการแจ้งเหตุ |
+| `/detect.html` | หน้าตรวจจับ AI; บน Railway ต้องเปิดได้แม้ไม่มี worker |
 | `/vision.html` | หน้าศูนย์ตรวจสอบ |
 | `/tools/seed_demo.php` | **404** (รันได้จาก command line เท่านั้น) |
 | `/tests/run_tests.php` | **404** (รันได้จาก command line เท่านั้น) |
@@ -112,11 +118,16 @@ Service → **Settings** → **Networking** → **Generate Domain**
 หน้า "ตรวจจับด้วย AI" บน Railway จะไม่มี detector ทำงานอยู่ และต้องแสดงสถานะตามจริงว่า
 ตัวตรวจจับ Local AI ไม่ได้ทำงานบน deployment นี้ ส่วนอื่นของเว็บต้องใช้งานได้ตามปกติ
 
-ตัวตรวจจับรันบนเครื่อง local เท่านั้น และต้องเตรียมเองเพราะไม่ได้อยู่ใน Git:
+ตัวตรวจจับรันบนเครื่อง local เท่านั้น โดยตัว worker อยู่ใน Git ที่
+`local_vision/worker.py` แต่ **โมเดลและวิดีโอจริงไม่ถูก publish**:
 
 - โมเดล pLitter (`references/pLitter/weights/*.pt`) — ไม่ได้ publish ขึ้น GitHub
-  เพราะเป็นของบุคคลที่สาม ต้องดาวน์โหลดเองจากต้นทาง
+  เพราะเป็นของบุคคลที่สามและ license ยังต้องตรวจให้ชัดก่อนใช้ production
+- วิดีโอใน `Video/` และ `references/test_videos/*.mp4` — gitignored
 - Python environment ที่มี `torch`, `torchvision`, `opencv-python`
+
+ตัวอย่าง local:
+`C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road`
 
 ---
 

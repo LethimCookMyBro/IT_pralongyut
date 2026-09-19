@@ -1,0 +1,11 @@
+{
+  "name": "bangsaen/waste-vision",
+  "description": "Bangsaen Waste Vision workshop prototype",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-mbstring": "*"
+  }
+}

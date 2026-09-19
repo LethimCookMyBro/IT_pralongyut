@@ -32,7 +32,9 @@ references/pLitter/
 *.pt
 
 # Phase D local video screening outputs / large reference clips
+Video/
 references/spike/candidate_eval/
+references/spike/detect-*.png
 references/test_videos/*.mp4
 references/test_videos/*.mov
 references/test_videos/*.avi

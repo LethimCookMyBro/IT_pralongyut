@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>ตรวจจับด้วย Local AI — Bangsaen Waste Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site">
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
+            <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="detect.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>ตรวจจับ AI</a>
+            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <div class="replay-banner">
+                <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
+                <span><strong>REPLAY MODE</strong> — วิดีโอหน้านี้เป็นวิดีโออ้างอิงสำหรับทดสอบ Local AI ไม่ใช่ CCTV เทศบาลและไม่ใช่เหตุจริงจากบางแสน</span>
+            </div>
+            <div class="replay-banner warning">
+                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                <span><strong>PROTOTYPE / UNCALIBRATED</strong> — AI ทำหน้าที่คัดกรองเท่านั้น ผลตรวจต้องผ่าน Incident Queue และเจ้าหน้าที่เป็นผู้ยืนยัน</span>
+            </div>
+
+            <div class="section-head detect-title-row">
+                <div>
+                    <h1 class="page-title">ตรวจจับด้วย Local AI</h1>
+                    <p class="muted">Python worker รัน pLitter บนเครื่อง local แล้วส่งเฟรมล่าสุดและผลตรวจมายังหน้านี้</p>
+                </div>
+                <div class="detector-status" id="detector-status" data-state="loading" role="status" aria-live="polite">
+                    <span class="detector-status-dot" aria-hidden="true"></span>
+                    <span id="detector-status-text">กำลังตรวจสถานะ…</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="detect-grid">
+            <div class="detect-viewer">
+                <div class="detect-frame-wrap" id="detect-frame-wrap">
+                    <img id="live-frame" alt="เฟรมล่าสุดจาก Local AI พร้อมกรอบตรวจจับ" hidden>
+                    <div class="detect-frame-empty" id="detect-frame-empty">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
+                        <strong>ยังไม่มีเฟรมจาก detector</strong>
+                        <span>บน Railway จะเป็นสถานะปกติ เพราะตัว AI รันเฉพาะเครื่อง local</span>
+                    </div>
+                </div>
+                <p class="detect-caption" id="detect-caption">รอสถานะจาก worker…</p>
+            </div>
+
+            <aside class="detect-panel" aria-label="ข้อมูลการตรวจจับล่าสุด">
+                <h2>ผลล่าสุด</h2>
+                <dl class="summary-list">
+                    <div class="summary-row"><dt>แหล่งวิดีโอ</dt><dd id="live-source">—</dd></div>
+                    <div class="summary-row"><dt>โมเดล</dt><dd id="live-model">—</dd></div>
+                    <div class="summary-row"><dt>ตรวจพบ</dt><dd><span id="live-count">—</span> ชิ้น</dd></div>
+                    <div class="summary-row"><dt>ความมั่นใจสูงสุด</dt><dd id="live-confidence">—</dd></div>
+                    <div class="summary-row"><dt>เวลา inference</dt><dd id="live-inference">—</dd></div>
+                    <div class="summary-row"><dt>อัปเดตล่าสุด</dt><dd id="live-age">—</dd></div>
+                </dl>
+
+                <div class="detect-classes">
+                    <h3>ประเภทที่โมเดลรายงาน</h3>
+                    <ul id="live-classes"><li class="muted">—</li></ul>
+                </div>
+
+                <div class="detect-post-state">
+                    <h3>ส่งเข้า Incident Pipeline</h3>
+                    <p class="muted" id="live-post-state">—</p>
+                    <a class="btn" href="vision.html">เปิดศูนย์ตรวจสอบ</a>
+                </div>
+            </aside>
+        </section>
+
+        <section>
+            <h2>ชุดวิดีโอสำหรับ Demo</h2>
+            <div class="source-cards">
+                <article class="source-card">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>LAND</span>
+                    <h3>ขยะริมถนน</h3>
+                    <p><code>vid0012.mp4</code> · pLitterStreet</p>
+                    <p class="muted">คัดด้วย real inference 7/7 sampled frames มี detection</p>
+                </article>
+                <article class="source-card">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>LAND</span>
+                    <h3>ขยะในเมือง / พื้นที่สาธารณะ</h3>
+                    <p><code>vid0269.mp4</code> · pLitterStreet</p>
+                    <p class="muted">คัดด้วย real inference 7/7 sampled frames มี detection</p>
+                </article>
+                <article class="source-card">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-water"></use></svg>WATER</span>
+                    <h3>ขยะในน้ำ</h3>
+                    <p>Pexels G 9736659 · pLitterFloat</p>
+                    <p class="muted">รันจริงแล้ว: 7 → 5 → 7 detections ใน 3 เฟรมแรกของ worker</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="webcam-section">
+            <h2>Webcam Preview <span class="origin-tag">โบนัส</span></h2>
+            <p class="muted">กล้องจะไม่ถูกขอสิทธิ์เองตอนเปิดหน้า ต้องกดปุ่มก่อน และพรีวิวนี้ไม่ส่งภาพขึ้น Cloud</p>
+            <div class="btn-row">
+                <button type="button" id="webcam-start" class="btn-ghost">เปิดพรีวิวเว็บแคม</button>
+                <button type="button" id="webcam-stop" class="btn-ghost" disabled>ปิดเว็บแคม</button>
+            </div>
+            <video id="webcam-preview" class="webcam-preview" autoplay playsinline muted hidden></video>
+            <p class="muted" id="webcam-note">พรีวิวในเบราว์เซอร์เท่านั้น ยังไม่ใช่ input ของ pLitter worker</p>
+        </section>
+    </main>
+
+    <script src="js/ui.js"></script>
+    <script src="js/detect.js"></script>
+</body>
+</html>

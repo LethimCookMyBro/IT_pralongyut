@@ -6,6 +6,7 @@ require __DIR__ . "/../lib/cli_only.php";
 require __DIR__ . "/../lib/validate.php";
 require __DIR__ . "/../lib/pagination.php";
 require __DIR__ . "/../lib/vision_evidence.php";
+require __DIR__ . "/../lib/live_detection.php";
 
 $passed = 0;
 $failed = 0;
@@ -287,7 +288,106 @@ check("evidence_path_or_null never throws", function () {
     assert(evidence_path_or_null("assets/vision/street-replay-01.jpg") === "assets/vision/street-replay-01.jpg");
 });
 
+// ---------- PHASE D: live detector runtime contract ----------
+
+function live_test_runtime(): string
+{
+    $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bangsaen-live-' . bin2hex(random_bytes(6));
+    if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+        throw new RuntimeException('create temp runtime failed');
+    }
+    return $dir;
+}
+
+function live_test_snapshot(int $epoch = 1000): array
+{
+    return [
+        'schema_version' => 1,
+        'generated_at' => '2026-09-19T16:00:00Z',
+        'generated_at_epoch' => $epoch,
+        'source_id' => 'road',
+        'source_label' => 'ขยะริมถนน',
+        'camera_name' => 'REPLAY-ROAD-01',
+        'location' => 'วิดีโออ้างอิง — ริมถนน',
+        'area_type' => 'land',
+        'model' => 'pLitterStreet',
+        'detected_count' => 2,
+        'max_confidence' => 0.75,
+        'classes' => ['Plastic' => 2],
+        'inference_ms' => 135.67,
+        'last_post_status' => 201,
+        'last_post_at' => '2026-09-19T16:00:00Z',
+        'last_post_error' => null,
+    ];
+}
+
+function remove_live_test_runtime(string $dir): void
+{
+    if (!is_dir($dir)) return;
+    foreach (glob($dir . DIRECTORY_SEPARATOR . '*') ?: [] as $path) {
+        if (is_file($path)) @unlink($path);
+    }
+    @rmdir($dir);
+}
+
+check("live detector offline when runtime is absent", function () {
+    $dir = live_test_runtime();
+    try {
+        $r = live_detection_read($dir, 1000);
+        assert($r['available'] === false);
+        assert($r['status'] === 'offline');
+        assert($r['snapshot'] === null);
+    } finally {
+        remove_live_test_runtime($dir);
+    }
+});
+
+check("fresh live detector snapshot is exposed with bounded fields", function () {
+    $dir = live_test_runtime();
+    try {
+        file_put_contents($dir . DIRECTORY_SEPARATOR . 'latest.json', json_encode(live_test_snapshot(), JSON_UNESCAPED_UNICODE));
+        file_put_contents($dir . DIRECTORY_SEPARATOR . 'latest.jpg', 'fake-jpeg-for-contract-test');
+        $r = live_detection_read($dir, 1003);
+        assert($r['available'] === true);
+        assert($r['status'] === 'live');
+        assert($r['age_seconds'] === 3);
+        assert($r['snapshot']['detected_count'] === 2);
+        assert($r['snapshot']['max_confidence'] === 0.75);
+        assert($r['snapshot']['classes'] === ['Plastic' => 2]);
+        assert(str_starts_with((string)$r['frame_url'], 'runtime/vision/latest.jpg?v='));
+    } finally {
+        remove_live_test_runtime($dir);
+    }
+});
+
+check("old live detector snapshot becomes stale instead of pretending live", function () {
+    $dir = live_test_runtime();
+    try {
+        file_put_contents($dir . DIRECTORY_SEPARATOR . 'latest.json', json_encode(live_test_snapshot(), JSON_UNESCAPED_UNICODE));
+        $r = live_detection_read($dir, 1010);
+        assert($r['available'] === true);
+        assert($r['status'] === 'stale');
+        assert($r['age_seconds'] === 10);
+    } finally {
+        remove_live_test_runtime($dir);
+    }
+});
+
+check("invalid live detector json fails closed", function () {
+    $dir = live_test_runtime();
+    try {
+        file_put_contents($dir . DIRECTORY_SEPARATOR . 'latest.json', '{not-json');
+        $r = live_detection_read($dir, 1000);
+        assert($r['available'] === false);
+        assert($r['status'] === 'invalid');
+        assert($r['snapshot'] === null);
+    } finally {
+        remove_live_test_runtime($dir);
+    }
+});
+
 // --- การตั้งค่าฐานข้อมูล: env ของ deployment ต้องมาก่อน ค่า local ต้องยังใช้ได้ ---
+
 // ทดสอบเฉพาะการอ่านค่า ไม่ได้ต่อฐานข้อมูลจริง
 require __DIR__ . "/../lib/db.php";
 
