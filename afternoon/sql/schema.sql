@@ -42,6 +42,8 @@ CREATE TABLE reports (
     image_path VARCHAR(255) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    resolved_at TIMESTAMP NULL DEFAULT NULL,
     INDEX idx_reports_latlng (latitude, longitude),
     INDEX idx_reports_listing (status, waste_type, created_at)
 );

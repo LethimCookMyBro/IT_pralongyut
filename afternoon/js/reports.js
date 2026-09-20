@@ -3,9 +3,10 @@
 // state ทั้งหมดเก็บใน URL query string → refresh หรือแชร์ลิงก์แล้วได้หน้าเดิม
 
 const STATUS_LABEL = {
-    PENDING: 'รอดำเนินการ',
-    NEEDS_CHECK: 'ควรตรวจสอบ',
-    RESOLVED: 'ดำเนินการแล้ว',
+    PENDING: 'รอตรวจสอบ',
+    NEEDS_CHECK: 'รอดำเนินการ',
+    RESOLVED: 'เสร็จแล้ว',
+    REJECTED: 'ไม่รับเรื่อง',
 };
 
 const WASTE_TYPE_LABEL = {

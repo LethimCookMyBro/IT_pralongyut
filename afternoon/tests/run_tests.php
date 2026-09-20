@@ -530,6 +530,10 @@ check("invalid live detector json fails closed", function () {
 
 require_once __DIR__ . "/../lib/activity.php";
 
+check("report lifecycle includes rejected terminal status", function () {
+    assert(in_array('REJECTED', VALID_REPORT_STATUSES, true));
+});
+
 function expect_activity_error(string $field, callable $fn): void
 {
     try {
@@ -590,13 +594,24 @@ check("activity sql with a kind filter excludes the other kinds", function () {
     foreach (["report", "detect", "resolve"] as $kind) {
         assert(!str_contains($sql, "'$kind' AS kind"), "kind $kind should be filtered out");
     }
-    assert(!str_contains($sql, "UNION"), "single kind should not need UNION");
+    assert(!str_contains($sql, "'report' AS kind"), "report creation kind should be filtered out");
 });
 
 check("every activity branch is bounded by the day window", function () {
     $sql = activity_sql(null, 7);
     // หนึ่ง window ต่อหนึ่ง branch — ห้ามมี branch ไหนดึงทั้งตาราง
     assert(substr_count($sql, "INTERVAL 7 DAY") === count(ACTIVITY_KINDS), "window count mismatch: $sql");
+});
+
+check("activity derives citizen review and resolve from real timestamps", function () {
+    $review = activity_branch_sql('review', 90);
+    assert(str_contains($review, 'FROM reports'));
+    assert(str_contains($review, 'reviewed_at AS occurred_at'));
+    assert(str_contains($review, "'citizen' AS source"));
+
+    $resolve = activity_branch_sql('resolve', 90);
+    assert(str_contains($resolve, 'FROM reports'));
+    assert(str_contains($resolve, 'resolved_at AS occurred_at'));
 });
 
 // --- การตั้งค่าฐานข้อมูล: env ของ deployment ต้องมาก่อน ค่า local ต้องยังใช้ได้ ---

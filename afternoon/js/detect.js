@@ -13,7 +13,7 @@
 // พร้อมบอกว่าโหมดวิดีโอทำงานบนเครื่อง local — ต้องไม่ดูเหมือนหน้า error
 
 const POLL_MS = 2000;
-const VIDEO_DIR = 'runtime/demo-videos';
+const VIDEO_DIR = 'assets/demo-videos';
 
 // เฟรมสำรองสำหรับตอนไม่มีไฟล์วิดีโอ
 // ตัวเลขชุดนี้มาจากการรัน worker จริง บันทึกที่มาไว้ใน assets/vision/README.md

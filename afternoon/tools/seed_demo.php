@@ -78,8 +78,9 @@ $reports = [
 ];
 
 $created_reports = 0;
+$report_ids = [];
 foreach ($reports as [$location, $type, $kg, $detail, $source, $lat, $lng]) {
-    post_json("$base/reports.php", [
+    $created = post_json("$base/reports.php", [
         'location' => $location,
         'waste_type' => $type,
         'amount_kg' => $kg,
@@ -91,6 +92,7 @@ foreach ($reports as [$location, $type, $kg, $detail, $source, $lat, $lng]) {
         // และ tools/clear_demo.php ลบได้เฉพาะแถวนี้
         'record_origin' => 'demo_seed',
     ]);
+    $report_ids[] = (int)$created['id'];
     $created_reports++;
 }
 
@@ -157,8 +159,20 @@ foreach ($reviews as [$id, $action]) {
     post_json("$base/vision-review.php", ['id' => $id, 'action' => $action]);
 }
 
+// ให้คิวรวมเห็นตัวอย่างจากประชาชนครบทั้งรอตรวจ รอดำเนินการ เสร็จแล้ว และไม่รับเรื่อง
+$report_reviews = [
+    [$report_ids[1], 'accept'],
+    [$report_ids[3], 'accept'],
+    [$report_ids[3], 'resolve'],
+    [$report_ids[4], 'reject'],
+];
+foreach ($report_reviews as [$id, $action]) {
+    post_json("$base/report-review.php", ['id' => $id, 'action' => $action]);
+}
+
 echo "เพิ่มข้อมูลตัวอย่างแล้ว (ไม่ลบข้อมูลเดิม)\n";
 echo "  reports            +$created_reports\n";
 echo "  vision observation +$created_observations\n";
 echo "  incidents ใหม่      " . count($incident_ids) . "\n";
 echo "  ตรวจสถานะให้แล้ว    " . count($reviews) . " ครั้ง\n";
+echo "  จัดสถานะเรื่องแจ้ง  " . count($report_reviews) . " ครั้ง\n";

@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/report_photo.php';
 
 const VALID_WASTE_TYPES = ["general", "recyclable", "hazardous", "organic"];
-const VALID_REPORT_STATUSES = ["PENDING", "NEEDS_CHECK", "RESOLVED"];
+const VALID_REPORT_STATUSES = ["PENDING", "NEEDS_CHECK", "RESOLVED", "REJECTED"];
 
 // location_source บอกว่าพิกัด/ชื่อสถานที่มาจากไหน
 // preset = เลือกจากพื้นที่ที่กำหนดไว้, gps = ตำแหน่งจาก browser geolocation, manual = ผู้ใช้พิมพ์เอง

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "source_id": "water",
+  "source_label": "ขยะในน้ำ",
+  "location": "วิดีโออ้างอิง — ทางน้ำ",
+  "camera_name": "REPLAY-WATER-01",
+  "area_type": "water",
+  "model": "pLitterFloat",
+  "video": "water.webm",
+  "source_video": "water-9736659.mp4",
+  "rendered_at": "2026-09-20T06:29:25Z",
+  "frames": 96,
+  "fps": 8.0,
+  "confidence_threshold": 0.25,
+  "frames_with_detection": 96,
+  "max_detected_count": 15,
+  "avg_detected_count": 7.07,
+  "max_confidence": 0.8692,
+  "classes": {
+    "debris": 503,
+    "styrofoam": 167,
+    "straw": 3,
+    "bottle": 6
+  },
+  "avg_inference_ms": 40.3,
+  "video_codec": "VP8/WebM"
+}

@@ -165,13 +165,14 @@ python morning\analyze.py
 ### รูปแจ้งจุดขยะและวิดีโอสาธิต
 
 - แจ้งได้ด้วยสถานที่อย่างเดียว รูปและรายละเอียดเป็นทางเลือก; ไม่ประเมินน้ำหนักหรือสร้างผล AI จากรูปผู้แจ้ง
-- รับ JPEG/PNG/WEBP ไม่เกิน 5 MB ตรวจ MIME ฝั่ง server และใช้ชื่อสุ่มใน `uploads/reports/`
+- รับ JPEG/PNG/WEBP ไม่เกิน 5 MB ตรวจ MIME ฝั่ง API และใช้ชื่อสุ่มใน `uploads/reports/`
 - Railway app ปัจจุบันไม่มี volume สำหรับรูป: รูปอาจหายหลัง restart/redeploy; API คืน `image_path: null` เมื่อไฟล์หาย ข้อมูลเรื่องแจ้งใน MySQL ยังอยู่
-- Existing DB ต้องตรวจ `DESCRIBE reports` แล้วใช้เฉพาะ migration `004`/`005` ที่ยังขาด ห้ามใช้ `schema.sql`; `CREATE TABLE IF NOT EXISTS` ไม่อัปเดตตารางเดิม
-- Render วิดีโอด้วย `C:\tmp\cv_venv\Scripts\python.exe local_vision\render_demo_videos.py` แล้ว sync `afternoon/runtime/demo-videos/` ไป XAMPP
-- Road/city ใช้ pLitterStreet; water ใช้ pLitterFloat กรอบและ JSON มาจาก inference จริง จำนวนเป็นค่าสูงสุดต่อเฟรม ไม่ใช่จำนวนวัตถุไม่ซ้ำ
-- วิดีโอ/weights เป็น local-only ไม่รวม deployment; Railway แสดงภาพผลตรวจตัวอย่างพร้อมสถิติของภาพนั้น
-- หน้าเว็บใช้ badge เดโมขนาดเล็กและซ่อนคำอธิบายไว้ในรายละเอียด: ไม่มี CCTV เทศบาลจริง ยังไม่มี measured accuracy ของบางแสน และคนเป็นผู้ตัดสินสุดท้าย
+- DB ต้องตรวจ `DESCRIBE reports` แล้วใช้เฉพาะ migration `004`/`005`/`006` ที่ยังขาด ห้ามใช้ `schema.sql`; `CREATE TABLE IF NOT EXISTS` ไม่อัปเดตตารางเดิม
+- `006_reports_lifecycle.sql` เพิ่ม `reviewed_at` และ `resolved_at` เพื่อบันทึกเวลาจริงของ workflow
+- วิดีโอ Water ที่เผยแพร่ได้อยู่ใน `afternoon/assets/demo-videos/`; Road/City ใช้ JPG fallback เพราะยังไม่มีหลักฐานสิทธิ์เผยแพร่ต้นฉบับ
+- Render ใหม่ด้วย `C:\tmp\cv_venv\Scripts\python.exe local_vision\render_demo_videos.py` แล้วคัดลอกเฉพาะไฟล์ที่ตรวจสิทธิ์แล้วไป `afternoon/assets/demo-videos/`
+- weights และวิดีโอต้นฉบับเป็น local-only
+- CCTV ยังเป็นโหมดจำลอง; จะต่อ RTSP จริงต้องมี URL/credential และบริการ capture/stream เพิ่ม
 
 รายละเอียดอยู่ใน [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md) สรุปสั้น ๆ:
 
@@ -229,8 +230,10 @@ bangsaen-waste-participant/
 ```bash
 python morning\test_waste_logic.py
 C:\xampp\php\php.exe afternoon\tests\run_tests.php
+C:\xampp\php\php.exe afternoon\tests\review_workflow_test.php
 C:\xampp\php\php.exe afternoon\tests\vision_integration_test.php
 C:\xampp\php\php.exe afternoon\tests\list_api_test.php   # ต้องเปิด Apache ไว้
+node afternoon\tests\review_queue_ui_test.js
 ```
 
 `list_api_test.php` ยิงใส่ Apache จริง โดยใส่เฉพาะแถวที่มี prefix ของตัวเอง

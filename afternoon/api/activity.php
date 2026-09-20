@@ -37,7 +37,7 @@ function get_activity(): void
     $offset = $paging['offset'];
     $stmt = $pdo->prepare(
         "SELECT * FROM ($timeline) AS activity$where
-         ORDER BY occurred_at DESC, ref_id DESC
+         ORDER BY occurred_at DESC, source, kind, ref_id DESC
          LIMIT $limit OFFSET $offset"
     );
     $stmt->execute($params);

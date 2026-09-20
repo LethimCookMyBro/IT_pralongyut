@@ -3,9 +3,9 @@
 // state ทั้งหมดเก็บใน URL query string → refresh หรือแชร์ลิงก์แล้วได้หน้าเดิม
 
 const KIND_LABEL = {
-    report: 'คนแจ้งจุดขยะ',
-    detect: 'AI พบเหตุใหม่',
-    review: 'เจ้าหน้าที่ตรวจ',
+    report: 'แจ้ง',
+    detect: 'AI ตรวจพบ',
+    review: 'รับเรื่อง',
     resolve: 'ปิดงาน',
 };
 
@@ -18,9 +18,10 @@ const KIND_ICON = {
 
 // สถานะของ reports ใช้คำเดียวกับหน้ารายการแจ้ง
 const REPORT_STATUS_LABEL = {
-    PENDING: 'รอดำเนินการ',
-    NEEDS_CHECK: 'ควรตรวจสอบ',
-    RESOLVED: 'ดำเนินการแล้ว',
+    PENDING: 'รอตรวจสอบ',
+    NEEDS_CHECK: 'รอดำเนินการ',
+    RESOLVED: 'เสร็จแล้ว',
+    REJECTED: 'ไม่รับเรื่อง',
 };
 
 const COLUMN_COUNT = 5;
@@ -91,16 +92,19 @@ function hasFilter() {
 
 // ผลลัพธ์ของเหตุการณ์: reports ใช้สถานะของเรื่อง, เหตุจาก AI ใช้สถานะตรวจ/สถานะงาน
 function stateCell(row) {
-    if (row.kind === 'report') {
-        const label = REPORT_STATUS_LABEL[row.state] ?? row.state;
-        return `<span class="status-badge ${escapeHtml(row.state)}">${escapeHtml(label)}</span>`;
-    }
-    return statusBadge(row.kind === 'resolve' ? 'action' : 'review', row.state);
+    const states = {
+        pending: ['pending', 'รอตรวจสอบ'],
+        accepted: ['in_progress', 'รอดำเนินการ'],
+        rejected: ['rejected', 'ไม่รับเรื่อง'],
+        resolved: ['resolved', 'เสร็จแล้ว'],
+    };
+    const [key, label] = states[row.state] ?? [row.state, REPORT_STATUS_LABEL[row.state] ?? row.state];
+    return `<span class="status-badge ${escapeHtml(key)}">${escapeHtml(label)}</span>`;
 }
 
 // อ้างอิงกลับไปที่ของจริง: เหตุจาก AI เปิดหน้ารายละเอียดได้ เรื่องแจ้งยังไม่มีหน้ารายละเอียด
 function refCell(row) {
-    if (row.kind === 'report') {
+    if (row.source === 'citizen') {
         return `<span class="muted">แจ้ง #${row.ref_id}</span>`;
     }
     return `<a href="incident.html?id=${row.ref_id}">เหตุ #${row.ref_id}</a>`;
@@ -115,12 +119,12 @@ function renderRows(activities) {
     }
 
     tbody.innerHTML = activities.map((row) => {
-        const kindLabel = KIND_LABEL[row.kind] ?? row.kind;
+        const kindLabel = row.kind === 'review' && row.state === 'rejected'
+            ? 'ไม่รับเรื่อง'
+            : (KIND_LABEL[row.kind] ?? row.kind);
         const icon = KIND_ICON[row.kind] ?? 'icon-clock';
         // ป้าย "ข้อมูลสาธิต" ติดที่แถว เพื่อไม่ให้ประวัติเดโมถูกอ่านเป็นเหตุการณ์จริง
-        const demoTag = row.record_origin === 'demo_seed'
-            ? '<span class="origin-tag demo_seed">ตัวอย่าง</span>'
-            : row.record_origin === 'detector_run' ? '<span class="source-pill">Replay</span>' : '';
+        const demoTag = sourceTags(row);
         return `
             <tr>
                 <td data-label="เวลา">${escapeHtml(formatDateTime(row.occurred_at))}</td>

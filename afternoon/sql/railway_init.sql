@@ -7,7 +7,7 @@
 --
 -- ห้ามรัน schema.sql บน production
 --
--- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001, 002, 003, 004, 005)
+-- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001, 002, 003, 004, 005, 006)
 -- ฐานข้อมูลใหม่จึงไม่ต้องรัน migrations แยกอีก
 -- ถ้าแก้ schema.sql ต้องแก้ไฟล์นี้ให้ตรงกันด้วย
 --
@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS waste_stats (
 -- latitude/longitude/location_source เพิ่มใน migrations/001_reports_location.sql
 -- record_origin เพิ่มใน migrations/004_reports_record_origin.sql
 -- waste_type/amount_kg ผ่อนเป็น NULL + image_path เพิ่มใน migrations/005_reports_photo_optional_fields.sql
+-- reviewed_at/resolved_at มาจาก migrations/006_reports_lifecycle.sql
 -- ที่นี่ใส่ไว้ให้ fresh install ได้โครงเดียวกันกับฐานที่ migrate แล้ว
 CREATE TABLE IF NOT EXISTS reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -50,6 +51,8 @@ CREATE TABLE IF NOT EXISTS reports (
     image_path VARCHAR(255) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    resolved_at TIMESTAMP NULL DEFAULT NULL,
     INDEX idx_reports_latlng (latitude, longitude),
     INDEX idx_reports_listing (status, waste_type, created_at)
 );

@@ -200,21 +200,21 @@ function renderIncident(incident, aggregation, evidence) {
 // ข้อความ dialog บอกให้ชัดว่าจะเกิดอะไร และอะไรย้อนไม่ได้
 const ACTION_DIALOG = {
     confirm: {
-        title: 'ยืนยันว่าเป็นเหตุจริง?',
-        message: 'ระบบจะบันทึกว่าคนตรวจยืนยันเหตุนี้ และเปลี่ยนสถานะเป็น "ต้องดำเนินการ" เพื่อให้มีคนไปจัดการต่อ',
-        confirmLabel: 'ยืนยันเหตุ',
+        title: 'รับเรื่องนี้?',
+        message: 'รายการจะย้ายไปรอดำเนินการเพื่อให้เจ้าหน้าที่จัดการต่อ',
+        confirmLabel: 'รับเรื่อง',
     },
     reject: {
-        title: 'ปฏิเสธเหตุนี้?',
-        message: 'ระบบจะบันทึกว่าไม่ใช่เหตุจริง เหตุนี้จะถูกปิดและไม่กลับมาอยู่ในคิวอีก การปฏิเสธย้อนกลับไม่ได้',
-        confirmLabel: 'ปฏิเสธเหตุ',
+        title: 'ไม่รับเรื่องนี้?',
+        message: 'รายการจะปิดเป็นไม่รับเรื่องและย้อนกลับไม่ได้',
+        confirmLabel: 'ไม่รับเรื่อง',
         confirmClass: 'btn-reject',
         focusCancel: true,
     },
     resolve: {
-        title: 'ทำเครื่องหมายว่าดำเนินการแล้ว?',
+        title: 'ปิดงานนี้?',
         message: 'ใช้เมื่อมีการเก็บ/จัดการจุดนี้เรียบร้อยแล้ว ระบบจะบันทึกเวลาปิดงานและนำเหตุออกจากงานที่ค้าง',
-        confirmLabel: 'ดำเนินการแล้ว',
+        confirmLabel: 'ปิดงาน',
     },
 };
 
@@ -226,26 +226,26 @@ function renderActions(incident) {
         note.textContent = 'ยังไม่ผ่านการตรวจของคน — ดูภาพและข้อมูลด้านบนก่อนตัดสิน';
         row.innerHTML = `
             <button type="button" data-action="confirm">
-                <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>ยืนยันเหตุ
+                <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>รับเรื่อง
             </button>
             <button type="button" class="btn-reject" data-action="reject">
-                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>ปฏิเสธ
+                <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>ไม่รับเรื่อง
             </button>`;
         return;
     }
 
     if (incident.review_status === 'confirmed' && incident.action_status !== 'resolved') {
-        note.textContent = 'ยืนยันแล้ว — รอดำเนินการในพื้นที่ กดปุ่มนี้เมื่อจัดการจุดนี้เรียบร้อย';
+        note.textContent = 'รับเรื่องแล้ว — รอดำเนินการในพื้นที่ กดปุ่มนี้เมื่อจัดการจุดนี้เรียบร้อย';
         row.innerHTML = `
             <button type="button" data-action="resolve">
-                <svg class="icon" aria-hidden="true"><use href="#icon-resolve"></use></svg>ทำเครื่องหมายว่าดำเนินการแล้ว
+                <svg class="icon" aria-hidden="true"><use href="#icon-resolve"></use></svg>ปิดงาน
             </button>`;
         return;
     }
 
     note.textContent = incident.review_status === 'rejected'
-        ? 'เหตุนี้ถูกปฏิเสธแล้ว จึงไม่มีขั้นตอนต่อไป (การปฏิเสธเป็นสถานะสุดท้าย)'
-        : 'เหตุนี้ดำเนินการเรียบร้อยแล้ว ไม่มีขั้นตอนที่ต้องทำต่อ';
+        ? 'รายการนี้ไม่รับเรื่องแล้ว จึงไม่มีขั้นตอนต่อไป'
+        : 'รายการนี้เสร็จแล้ว ไม่มีขั้นตอนที่ต้องทำต่อ';
     row.innerHTML = '';
 }
 

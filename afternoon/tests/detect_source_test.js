@@ -39,7 +39,7 @@ function page() {
         },
     });
     vm.runInContext(source, context, { filename: 'detect.js' });
-    return { context, element, request: (id) => requests.get(`runtime/demo-videos/${id}.json`) };
+    return { context, element, request: (id) => requests.get(`assets/demo-videos/${id}.json`) };
 }
 const stats = (id, count) => ({ video: `${id}.webm`, frames: 120, fps: 8, max_detected_count: count,
     max_confidence: count / 10, model: id, source_label: id, classes: { Plastic: count } });
@@ -57,7 +57,7 @@ async function checkRace(mode) {
     ui.request('city').resolve(reply(stats('city', 7)));
     await cityLoad;
     function expectCity() {
-        assert.equal(ui.element('detect-video').src, 'runtime/demo-videos/city.webm');
+        assert.equal(ui.element('detect-video').src, 'assets/demo-videos/city.webm');
         assert.equal(ui.element('detect-video').hidden, false);
         assert.equal(ui.element('detect-fallback-img').hidden, true);
         assert.equal(ui.element('live-count').textContent, '7');

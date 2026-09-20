@@ -43,9 +43,9 @@
                 <label class="field" for="filter-kind">ประเภทกิจกรรม
                     <select id="filter-kind" name="kind">
                         <option value="">ทั้งหมด</option>
-                        <option value="report">คนแจ้งจุดขยะ</option>
-                        <option value="detect">AI พบเหตุใหม่</option>
-                        <option value="review">เจ้าหน้าที่ตรวจ</option>
+                        <option value="report">แจ้ง</option>
+                        <option value="detect">AI ตรวจพบ</option>
+                        <option value="review">รับเรื่อง / ไม่รับเรื่อง</option>
                         <option value="resolve">ปิดงาน</option>
                     </select>
                 </label>
@@ -75,7 +75,7 @@
                 <summary>ประวัตินี้ครอบคลุมอะไร และยังไม่ครอบคลุมอะไร</summary>
                 <p class="muted">
                     ระบบยังไม่มีตารางบันทึกเหตุการณ์แยก หน้านี้จึงอ่านจากคอลัมน์เวลาที่มีอยู่จริง
-                    (<span class="term-en">reports.created_at, vision_incidents.first_seen / reviewed_at / resolved_at</span>)
+                    (<span class="term-en">reports.created_at / reviewed_at / resolved_at, vision_incidents.first_seen / reviewed_at / resolved_at</span>)
                     ผลคือ <strong>เห็น</strong> การแจ้งเรื่อง การพบเหตุใหม่ การตรวจครั้งล่าสุด และการปิดงาน
                     แต่ <strong>ยังไม่เห็น</strong> การตรวจซ้ำครั้งก่อน ๆ ของเหตุเดิม (ดูได้ในหน้ารายละเอียดเหตุ)
                     และการแก้ไขข้อมูล เพราะยังไม่ได้เก็บเวลาที่แก้
@@ -86,7 +86,7 @@
 
     <script src="js/ui.js?v=20260920-polish2"></script>
     <!-- ใช้คำแปลสถานะ/ป้ายที่มาชุดเดียวกับหน้าศูนย์ตรวจสอบ เพื่อไม่ให้คำเรียกเพี้ยนกันคนละหน้า -->
-    <script src="js/vision-common.js?v=20260920-polish"></script>
-    <script src="js/activity.js?v=20260920-polish"></script>
+    <script src="js/vision-common.js?v=20260920-workflow"></script>
+    <script src="js/activity.js?v=20260920-workflow"></script>
 </body>
 </html>

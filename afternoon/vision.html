@@ -34,10 +34,10 @@
                  การกรองทำที่ฝั่ง server (api/vision.php?view=…) จึงรองรับข้อมูลจำนวนมากได้ -->
             <div class="view-tabs" role="tablist" aria-label="กลุ่มงาน" id="view-tabs">
                 <button type="button" class="view-tab" role="tab" data-view="review" aria-selected="true" aria-controls="incident-list">
-                    ต้องตรวจ<span class="view-tab-count" data-count="to_review">–</span>
+                    รอตรวจสอบ<span class="view-tab-count" data-count="to_review">–</span>
                 </button>
                 <button type="button" class="view-tab" role="tab" data-view="action" aria-selected="false" aria-controls="incident-list">
-                    ต้องดำเนินการ<span class="view-tab-count" data-count="to_act">–</span>
+                    รอดำเนินการ<span class="view-tab-count" data-count="to_act">–</span>
                 </button>
                 <button type="button" class="view-tab" role="tab" data-view="history" aria-selected="false" aria-controls="incident-list">
                     เสร็จแล้ว<span class="view-tab-count" data-count="history">–</span>
@@ -54,6 +54,13 @@
                 <details class="filter-more" id="filter-more">
                     <summary>ตัวกรอง</summary>
                     <div class="filter-more-body">
+                        <label class="field" for="filter-source">ที่มา
+                            <select id="filter-source" name="source">
+                                <option value="">ทั้งหมด</option>
+                                <option value="citizen">ประชาชนแจ้ง</option>
+                                <option value="ai">AI ตรวจพบ</option>
+                            </select>
+                        </label>
                         <label class="field" for="filter-area">ประเภทพื้นที่
                             <select id="filter-area" name="area_type">
                                 <option value="">ทั้งหมด</option>
@@ -94,7 +101,7 @@
     </main>
 
     <script src="js/ui.js?v=20260920-polish2"></script>
-    <script src="js/vision-common.js?v=20260920-polish"></script>
-    <script src="js/vision.js?v=20260920-polish"></script>
+    <script src="js/vision-common.js?v=20260920-workflow"></script>
+    <script src="js/vision.js?v=20260920-workflow"></script>
 </body>
 </html>

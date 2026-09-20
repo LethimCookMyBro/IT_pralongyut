@@ -5,8 +5,8 @@
 
 const REVIEW_LABEL = {
     pending: 'รอตรวจสอบ',
-    confirmed: 'ยืนยันแล้ว',
-    rejected: 'ปฏิเสธ',
+    confirmed: 'รอดำเนินการ',
+    rejected: 'ไม่รับเรื่อง',
 };
 
 const REVIEW_ICON = {
@@ -17,8 +17,8 @@ const REVIEW_ICON = {
 
 const ACTION_LABEL = {
     none: 'ยังไม่มีงาน',
-    needs_check: 'ต้องดำเนินการ',
-    resolved: 'ดำเนินการแล้ว',
+    needs_check: 'รอดำเนินการ',
+    resolved: 'เสร็จแล้ว',
 };
 
 const ACTION_ICON = {
@@ -29,7 +29,7 @@ const ACTION_ICON = {
 
 const AREA_LABEL = { land: 'บนบก', water: 'ทางน้ำ' };
 const SOURCE_MODE_LABEL = { replay: 'เล่นซ้ำจากไฟล์ (replay)', camera: 'กล้องทดสอบ', cctv: 'CCTV' };
-const RECORD_ORIGIN_LABEL = { demo_seed: 'ข้อมูลสาธิต', detector_run: 'AI ตรวจจริง' };
+const RECORD_ORIGIN_LABEL = { demo_seed: 'ตัวอย่าง', detector_run: 'AI ตรวจพบ' };
 
 // ความมั่นใจของโมเดล ไม่ใช่ค่าความแม่นยำของระบบ
 const fmtConf = (v) => (v === null || v === undefined ? '—' : `${(Number(v) * 100).toFixed(1)}%`);
@@ -69,11 +69,34 @@ function statusBadge(kind, value) {
     return `<span class="status-badge ${escapeHtml(value)}">${iconHtml}${escapeHtml(label)}</span>`;
 }
 
-// สถานะที่คนอ่านเข้าใจได้ในบรรทัดเดียว: review ก่อน ตามด้วยงานที่ค้าง
-function statusStack(incident) {
-    const parts = [statusBadge('review', incident.review_status)];
-    if (incident.action_status !== 'none') {
-        parts.push(statusBadge('action', incident.action_status));
+function compositeStatus(item) {
+    if (item.review_status === 'rejected') {
+        return { key: 'rejected', label: 'ไม่รับเรื่อง', icon: 'icon-x' };
     }
-    return `<div class="status-stack">${parts.join('')}</div>`;
+    if (item.action_status === 'resolved') {
+        return { key: 'resolved', label: 'เสร็จแล้ว', icon: 'icon-resolve' };
+    }
+    if (item.review_status === 'confirmed') {
+        return { key: 'in_progress', label: 'รอดำเนินการ', icon: 'icon-warning' };
+    }
+    return { key: 'pending', label: 'รอตรวจสอบ', icon: 'icon-clock' };
+}
+
+function compositeStatusBadge(item) {
+    const status = compositeStatus(item);
+    return `<span class="status-badge ${status.key}"><svg class="icon" aria-hidden="true"><use href="#${status.icon}"></use></svg>${status.label}</span>`;
+}
+
+function sourceTags(item) {
+    const source = item.source === 'citizen' ? 'ประชาชนแจ้ง' : 'AI ตรวจพบ';
+    const tags = [`<span class="source-pill ${escapeHtml(item.source)}">${source}</span>`];
+    if (item.record_origin === 'demo_seed') {
+        tags.push('<span class="origin-tag demo_seed">ตัวอย่าง</span>');
+    }
+    return tags.join('');
+}
+
+// ชื่อเดิมคงไว้ให้หน้ารายละเอียดใช้ร่วมกัน โดยคืนป้าย composite เพียงอันเดียว
+function statusStack(item) {
+    return `<div class="status-stack">${compositeStatusBadge(item)}</div>`;
 }

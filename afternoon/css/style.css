@@ -1087,13 +1087,15 @@ dialog.confirm-dialog::backdrop {
 
 .status-badge.needs_check,
 .status-badge.NEEDS_CHECK,
+.status-badge.in_progress,
 .status-badge.pending,
 .status-badge.PENDING {
     background: var(--color-warning-bg);
     color: var(--color-warning-text);
 }
 
-.status-badge.rejected {
+.status-badge.rejected,
+.status-badge.REJECTED {
     background: var(--color-danger-bg);
     color: var(--color-danger-text);
 }

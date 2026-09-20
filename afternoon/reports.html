@@ -54,9 +54,10 @@
                         <label class="field" for="filter-status">สถานะ
                             <select id="filter-status" name="status">
                                 <option value="">ทั้งหมด</option>
-                                <option value="PENDING">รอดำเนินการ</option>
-                                <option value="NEEDS_CHECK">ควรตรวจสอบ</option>
-                                <option value="RESOLVED">ดำเนินการแล้ว</option>
+                                <option value="PENDING">รอตรวจสอบ</option>
+                                <option value="NEEDS_CHECK">รอดำเนินการ</option>
+                                <option value="RESOLVED">เสร็จแล้ว</option>
+                                <option value="REJECTED">ไม่รับเรื่อง</option>
                             </select>
                         </label>
                         <label class="field" for="filter-origin">ที่มาของข้อมูล
@@ -89,6 +90,6 @@
     </main>
 
     <script src="js/ui.js?v=20260920-polish2"></script>
-    <script src="js/reports.js?v=20260920-polish"></script>
+    <script src="js/reports.js?v=20260920-workflow"></script>
 </body>
 </html>

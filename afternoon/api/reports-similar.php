@@ -53,7 +53,7 @@ function get_similar_reports(): void
     $sql = "SELECT id, location, latitude, longitude, location_source,
                    waste_type, amount_kg, detail, status, created_at
             FROM reports
-            WHERE status <> 'RESOLVED'
+        WHERE status NOT IN ('RESOLVED', 'REJECTED')
               AND created_at >= DATE_SUB(NOW(), INTERVAL $window_days DAY)";
     $params = [];
     $rule = '';
