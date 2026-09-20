@@ -118,7 +118,9 @@ function renderRows(activities) {
         const kindLabel = KIND_LABEL[row.kind] ?? row.kind;
         const icon = KIND_ICON[row.kind] ?? 'icon-clock';
         // ป้าย "ข้อมูลสาธิต" ติดที่แถว เพื่อไม่ให้ประวัติเดโมถูกอ่านเป็นเหตุการณ์จริง
-        const demoTag = row.record_origin === 'demo_seed' ? originTag('demo_seed') : '';
+        const demoTag = row.record_origin === 'demo_seed'
+            ? '<span class="origin-tag demo_seed">ตัวอย่าง</span>'
+            : row.record_origin === 'detector_run' ? '<span class="source-pill">Replay</span>' : '';
         return `
             <tr>
                 <td data-label="เวลา">${escapeHtml(formatDateTime(row.occurred_at))}</td>
@@ -129,7 +131,6 @@ function renderRows(activities) {
                 </td>
                 <td class="cell-lead">
                     <span class="cell-primary">${escapeHtml(row.location)}${demoTag}</span>
-                    <span class="cell-secondary">${escapeHtml(row.extra ?? '')}</span>
                 </td>
                 <td data-label="ผลลัพธ์">${stateCell(row)}</td>
                 <td data-label="อ้างอิง">${refCell(row)}</td>

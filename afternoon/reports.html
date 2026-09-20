@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
     <title>รายการแจ้ง — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260920-polish2">
 </head>
 <body>
     <header class="site">
-        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <h1><a class="brand-link" href="index.html"><img class="brand-mark" src="assets/app-icon.svg" width="36" height="36" alt="">Bangsaen Waste Vision</a></h1>
         <nav class="site" aria-label="เมนูหลัก">
             <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
@@ -26,46 +27,48 @@
     <main>
         <section>
             <h1 class="page-title">รายการแจ้งจุดขยะ</h1>
-            <p class="muted">รายการที่แจ้งเข้ามาผ่านหน้าเว็บนี้ เรียงจากใหม่ไปเก่า —
-                ต้องการแจ้งเพิ่มไปที่หน้า <a href="report.html">แจ้งจุดขยะ</a></p>
+            <p class="lede">เรื่องที่แจ้งผ่านเว็บนี้ เรียงจากใหม่ไปเก่า</p>
 
-            <p class="replay-banner">
-                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                <span>ระบบต้นแบบ — ไม่ใช่ช่องทางรับเรื่องจริงของเทศบาล
-                    แถวที่ติดป้าย <span class="origin-tag demo_seed">ตัวอย่าง</span>
-                    เป็นข้อมูลสมมติที่ใส่ไว้ให้เห็นการทำงานของตัวกรองและการแบ่งหน้า
-                    <span class="term-en">(demo data, removable)</span></span>
-            </p>
 
-            <form class="filter-bar" id="filter-bar" role="search">
-                <label class="field field-search" for="filter-q">ค้นหาสถานที่
-                    <input type="search" id="filter-q" name="q" placeholder="เช่น บางแสน, หนองมน" autocomplete="off">
+            <!-- ค้นหาอยู่นอก ส่วนตัวกรองที่เหลือพับไว้
+                 คนส่วนใหญ่เข้ามาเพื่อ "หาจุดหนึ่ง" ไม่ใช่เพื่อไล่กรองทีละมิติ
+                 จึงไม่ให้แถบตัวกรองสี่ช่องกินพื้นที่เหนือรายการตลอดเวลา -->
+            <form class="filter-bar filter-bar-compact" id="filter-bar" role="search">
+                <label class="field field-search" for="filter-q">
+                    <span class="visually-hidden">ค้นหาสถานที่</span>
+                    <input type="search" id="filter-q" name="q" placeholder="ค้นหาสถานที่ เช่น บางแสน, หนองมน" autocomplete="off">
                 </label>
-                <label class="field" for="filter-type">ประเภทขยะ
-                    <select id="filter-type" name="waste_type">
-                        <option value="">ทั้งหมด</option>
-                        <option value="general">ทั่วไป</option>
-                        <option value="recyclable">รีไซเคิล</option>
-                        <option value="hazardous">อันตราย</option>
-                        <option value="organic">อินทรีย์</option>
-                    </select>
-                </label>
-                <label class="field" for="filter-status">สถานะ
-                    <select id="filter-status" name="status">
-                        <option value="">ทั้งหมด</option>
-                        <option value="PENDING">รอดำเนินการ</option>
-                        <option value="NEEDS_CHECK">ควรตรวจสอบ</option>
-                        <option value="RESOLVED">ดำเนินการแล้ว</option>
-                    </select>
-                </label>
-                <label class="field" for="filter-origin">ที่มาของข้อมูล
-                    <select id="filter-origin" name="record_origin">
-                        <option value="">ทั้งหมด</option>
-                        <option value="citizen">แจ้งผ่านหน้าเว็บ</option>
-                        <option value="demo_seed">ข้อมูลตัวอย่าง</option>
-                    </select>
-                </label>
-                <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+
+                <details class="filter-more" id="filter-more">
+                    <summary>ตัวกรอง</summary>
+                    <div class="filter-more-body">
+                        <label class="field" for="filter-type">ประเภทขยะ
+                            <select id="filter-type" name="waste_type">
+                                <option value="">ทั้งหมด</option>
+                                <option value="general">ทั่วไป</option>
+                                <option value="recyclable">รีไซเคิล</option>
+                                <option value="hazardous">อันตราย</option>
+                                <option value="organic">อินทรีย์</option>
+                            </select>
+                        </label>
+                        <label class="field" for="filter-status">สถานะ
+                            <select id="filter-status" name="status">
+                                <option value="">ทั้งหมด</option>
+                                <option value="PENDING">รอดำเนินการ</option>
+                                <option value="NEEDS_CHECK">ควรตรวจสอบ</option>
+                                <option value="RESOLVED">ดำเนินการแล้ว</option>
+                            </select>
+                        </label>
+                        <label class="field" for="filter-origin">ที่มาของข้อมูล
+                            <select id="filter-origin" name="record_origin">
+                                <option value="">ทั้งหมด</option>
+                                <option value="citizen">แจ้งผ่านหน้าเว็บ</option>
+                                <option value="demo_seed">ข้อมูลตัวอย่าง</option>
+                            </select>
+                        </label>
+                        <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+                    </div>
+                </details>
             </form>
 
             <div class="table-wrap">
@@ -73,9 +76,6 @@
                     <thead>
                         <tr>
                             <th>สถานที่</th>
-                            <th>ประเภท</th>
-                            <th class="num">ปริมาณ (กก.)</th>
-                            <th>รายละเอียด</th>
                             <th>สถานะ</th>
                             <th>เวลาแจ้ง</th>
                         </tr>
@@ -88,7 +88,7 @@
         </section>
     </main>
 
-    <script src="js/ui.js"></script>
-    <script src="js/reports.js"></script>
+    <script src="js/ui.js?v=20260920-polish2"></script>
+    <script src="js/reports.js?v=20260920-polish"></script>
 </body>
 </html>

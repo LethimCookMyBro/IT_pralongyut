@@ -40,6 +40,9 @@ function db(): PDO
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+        // TIMESTAMP values are returned in Bangkok time on both XAMPP and Railway.
+        // Session-only: this does not rewrite any stored timestamps.
+        $pdo->exec("SET time_zone = '+07:00'");
     }
     return $pdo;
 }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . "/../lib/cli_only.php";
+require_once __DIR__ . "/../lib/cli_only.php";
 
 /**
  * clear_demo.php — ลบ "ข้อมูลตัวอย่างสำหรับเดโม" ที่ tools/seed_demo.php ใส่ไว้
@@ -25,7 +25,7 @@ require __DIR__ . "/../lib/cli_only.php";
 
 $apply = in_array('--yes', array_slice($argv, 1), true);
 
-require __DIR__ . "/../lib/db.php";
+require_once __DIR__ . "/../lib/db.php";
 $pdo = db();
 
 // observations ก่อน incidents — observation ของ incident ตัวอย่างต้องหายไปด้วย

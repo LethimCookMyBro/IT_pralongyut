@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . "/../lib/cli_only.php";
+require_once __DIR__ . "/../lib/cli_only.php";
 
 // Integration test: pagination / filter / search ของ endpoint ที่คืนรายการ
 //   GET api/reports.php
@@ -14,8 +14,8 @@ require __DIR__ . "/../lib/cli_only.php";
 // ข้อมูลทดสอบใช้ prefix เฉพาะรอบ แล้วลบทิ้งใน finally
 // ไม่ลบข้อมูล demo/ผู้ใช้จริง
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/vision_config.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/vision_config.php';
 
 $base = 'http://localhost/bangsaen/api';
 $prefix = 'TESTLIST-' . date('His');

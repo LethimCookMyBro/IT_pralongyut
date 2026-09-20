@@ -7,7 +7,7 @@
 --
 -- ห้ามรัน schema.sql บน production
 --
--- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001, 002, 003, 004)
+-- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001, 002, 003, 004, 005)
 -- ฐานข้อมูลใหม่จึงไม่ต้องรัน migrations แยกอีก
 -- ถ้าแก้ schema.sql ต้องแก้ไฟล์นี้ให้ตรงกันด้วย
 --
@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS waste_stats (
 -- ตารางเดิม: จุดแจ้งขยะจากประชาชน/เจ้าหน้าที่
 -- latitude/longitude/location_source เพิ่มใน migrations/001_reports_location.sql
 -- record_origin เพิ่มใน migrations/004_reports_record_origin.sql
+-- waste_type/amount_kg ผ่อนเป็น NULL + image_path เพิ่มใน migrations/005_reports_photo_optional_fields.sql
 -- ที่นี่ใส่ไว้ให้ fresh install ได้โครงเดียวกันกับฐานที่ migrate แล้ว
 CREATE TABLE IF NOT EXISTS reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,9 +41,13 @@ CREATE TABLE IF NOT EXISTS reports (
     location_source ENUM('preset','gps','manual') NOT NULL DEFAULT 'manual',
     -- citizen = คนแจ้งจริง, demo_seed = ข้อมูลตัวอย่างจาก tools/seed_demo.php
     record_origin ENUM('citizen','demo_seed') NOT NULL DEFAULT 'citizen',
-    waste_type VARCHAR(20) NOT NULL,
-    amount_kg INT NOT NULL,
+    -- NULL ได้ตั้งแต่ migrations/005: ประชาชนไม่ต้องจำแนกประเภท/ประเมินน้ำหนักก่อนแจ้ง
+    -- NULL = ไม่รู้ ไม่ใช่ศูนย์ — ห้ามเติมค่าปลอมให้ validation ผ่าน
+    waste_type VARCHAR(20) NULL,
+    amount_kg INT NULL,
     detail VARCHAR(500) NOT NULL DEFAULT '',
+    -- path ของรูปที่ผู้ใช้แนบ (เช่น uploads/reports/ab12….jpg) — เก็บแค่ path ไม่เก็บ binary
+    image_path VARCHAR(255) NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_reports_latlng (latitude, longitude),

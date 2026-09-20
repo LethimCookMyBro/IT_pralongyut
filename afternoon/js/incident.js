@@ -24,7 +24,7 @@ function showLoadError(message) {
 
 async function loadIncident() {
     if (!Number.isInteger(incidentId) || incidentId < 1) {
-        showLoadError('ลิงก์ไม่ถูกต้อง: ต้องระบุหมายเลขเหตุ เช่น incident.html?id=12');
+        showLoadError('ยังไม่ได้เลือกจุด กรุณากลับไปเลือกจากศูนย์ตรวจสอบ');
         return;
     }
 
@@ -65,7 +65,7 @@ function renderEvidence(evidence) {
             <div class="evidence-empty">
                 ${icon('icon-camera')}
                 <p class="evidence-empty-title">ยังไม่มีภาพหลักฐานสำหรับเหตุนี้</p>
-                <p class="muted">การตรวจพบของเหตุนี้ไม่ได้แนบภาพไว้ — ดูจำนวนที่ตรวจพบและเวลาได้จากประวัติการตรวจพบด้านล่าง</p>
+                <p class="muted">ดูข้อมูลการตรวจพบด้านล่าง</p>
             </div>`;
         return;
     }
@@ -89,7 +89,7 @@ function renderEvidence(evidence) {
             <figcaption>
                 <span id="evidence-caption"></span>
                 <span class="evidence-disclaimer">
-                    ภาพจากการตรวจพบด้วยโมเดลในโหมด Replay · ยังไม่ใช่ภาพจาก CCTV เทศบาลจริง
+                    Replay · ภาพผลตรวจจาก AI
                 </span>
             </figcaption>
         </figure>
@@ -140,13 +140,13 @@ function renderIncident(incident, aggregation, evidence) {
     // สถานที่คือสิ่งที่ต้องเห็นก่อน ไม่ใช่ field หนึ่งในตาราง
     document.getElementById('incident-place').textContent = incident.location;
     document.getElementById('incident-subline').textContent =
-        `${incident.camera_name} · พบล่าสุด ${formatDateTime(incident.last_seen)}`;
+        `พบล่าสุด ${formatDateTime(incident.last_seen)}`;
 
     const originBanner = document.getElementById('origin-banner-text');
     if (incident.record_origin === 'detector_run') {
-        originBanner.innerHTML = 'โหมดเล่นซ้ำ (replay) — เหตุนี้มาจาก <strong>AI ที่รันจริงบนวิดีโออ้างอิง</strong> แต่ยังไม่ใช่ CCTV เทศบาลจริงและไม่ใช่เหตุจริงจากบางแสน';
+        originBanner.textContent = 'Replay · AI';
     } else {
-        originBanner.innerHTML = 'โหมดเล่นซ้ำ (replay) — เหตุนี้เป็น <strong>ข้อมูลสาธิต</strong> สำหรับทดสอบระบบ ยังไม่ได้เชื่อมกล้อง/CCTV เทศบาลจริง และไม่ใช่เหตุจริงจากบางแสน';
+        originBanner.textContent = 'Replay · ตัวอย่าง';
     }
 
     renderEvidence(evidence);
@@ -156,8 +156,6 @@ function renderIncident(incident, aggregation, evidence) {
         ['พบทั้งหมด', `${Number(incident.observation_count)} ครั้ง`],
         ['จำนวนสูงสุด', `${Number(incident.peak_detected_count)} ชิ้น`],
         ['แนวโน้ม', trendTag(incident)],
-        ['ความมั่นใจของโมเดล', escapeHtml(fmtConf(incident.max_confidence)),
-            'เป็นค่าประกอบการตรวจสอบ ไม่ใช่ค่าความแม่นยำของระบบ'],
     ];
     document.getElementById('summary-list').innerHTML = summary
         .map(([label, value, note]) => `
@@ -181,6 +179,8 @@ function renderIncident(incident, aggregation, evidence) {
 
     // ทางเทคนิค: อยู่ใน <details> ไม่แย่งสายตา
     document.getElementById('tech-grid').innerHTML = detailRows([
+        ['ขอบเขต', 'วิดีโออ้างอิง ไม่ใช่ CCTV เทศบาลหรือเหตุจริงจากบางแสน'],
+        ['ความมั่นใจของโมเดล', escapeHtml(fmtConf(incident.max_confidence)), 'ไม่ใช่ค่าความแม่นยำของระบบ'],
         ['หมายเลขเหตุ', `#${Number(incident.id)}`],
         ['จำนวนที่พบครั้งแรก', `${Number(incident.first_detected_count)} ชิ้น`],
         ['จำนวนที่พบครั้งล่าสุด', `${Number(incident.latest_detected_count)} ชิ้น`],

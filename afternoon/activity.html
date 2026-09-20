@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
     <title>ประวัติย้อนหลัง — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260920-polish2">
 </head>
 <body>
     <header class="site">
-        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <h1><a class="brand-link" href="index.html"><img class="brand-mark" src="assets/app-icon.svg" width="36" height="36" alt="">Bangsaen Waste Vision</a></h1>
         <nav class="site" aria-label="เมนูหลัก">
             <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
@@ -25,18 +26,8 @@
 
     <main>
         <section>
-            <h1 class="page-title">ประวัติย้อนหลัง</h1>
-            <p class="muted">
-                เหตุการณ์ที่เกิดขึ้นในระบบ เรียงจากใหม่ไปเก่า ย้อนหลังได้ไม่เกิน 90 วัน
-                <span class="term-en">(activity log)</span>
-            </p>
-
-            <p class="replay-banner">
-                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                <span>หน้านี้อ่านจากเวลาที่บันทึกไว้ในข้อมูลจริงของระบบ ไม่ได้เติมประวัติย้อนหลังเทียม
-                    ถ้าเพิ่งติดตั้ง จะเห็นเฉพาะช่วงที่เริ่มใช้งานเท่านั้น
-                    และแถวที่ติดป้าย <span class="origin-tag demo_seed">ข้อมูลสาธิต</span> คือข้อมูลตัวอย่างสำหรับเดโม</span>
-            </p>
+            <h1 class="page-title">ประวัติ</h1>
+            <p class="lede">กิจกรรมย้อนหลังสูงสุด 90 วัน</p>
 
             <form class="filter-bar" id="filter-bar" role="search">
                 <label class="field field-search" for="filter-q">ค้นหาสถานที่
@@ -93,9 +84,9 @@
         </section>
     </main>
 
-    <script src="js/ui.js"></script>
+    <script src="js/ui.js?v=20260920-polish2"></script>
     <!-- ใช้คำแปลสถานะ/ป้ายที่มาชุดเดียวกับหน้าศูนย์ตรวจสอบ เพื่อไม่ให้คำเรียกเพี้ยนกันคนละหน้า -->
-    <script src="js/vision-common.js"></script>
-    <script src="js/activity.js"></script>
+    <script src="js/vision-common.js?v=20260920-polish"></script>
+    <script src="js/activity.js?v=20260920-polish"></script>
 </body>
 </html>

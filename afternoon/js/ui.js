@@ -27,6 +27,8 @@ const ICON_SPRITE = `
 <symbol id="icon-spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="42 100"/></symbol>
 <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><circle cx="12" cy="10" r="2.6" stroke="currentColor" stroke-width="1.8" fill="none"/></symbol>
 <symbol id="icon-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="12" y1="1.5" x2="12" y2="5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="1.5" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="19" y1="12" x2="22.5" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="8.5" cy="10" r="1.6" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M4 17.5 9.5 12l3.5 3.5L16 13l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+<symbol id="icon-play" viewBox="0 0 24 24"><polygon points="8 5 19 12 8 19" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
 <symbol id="icon-inbox" viewBox="0 0 24 24"><path d="M3 13.5 5.5 5h13L21 13.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/><path d="M3 13.5h5l1.2 2.2h5.6L16 13.5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/></symbol>
 `;
 
@@ -59,23 +61,56 @@ function escapeHtml(value) {
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat('th-TH', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone: 'Asia/Bangkok',
 });
+
+// db.php returns naive SQL timestamps in Bangkok time. Keep explicit offsets intact.
+function parseServerDate(value) {
+    const text = String(value).replace(' ', 'T');
+    return new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?$/.test(text)
+        ? `${text}+07:00` : text);
+}
 
 // MySQL DATETIME ("2026-09-19 14:40:05") → "19 ก.ย. 2569 14:40"
 // ถ้าแปลงไม่ได้ให้คืนค่าดิบ ดีกว่าโชว์ "Invalid Date"
 function formatDateTime(value) {
     if (!value) return '—';
-    const date = new Date(String(value).replace(' ', 'T'));
+    const date = parseServerDate(value);
     if (Number.isNaN(date.getTime())) return String(value);
     return DATE_TIME_FORMAT.format(date);
+}
+
+// "5 นาทีที่แล้ว" — ใช้ในคิวที่คนต้องกวาดตา ไม่ใช่ที่ที่ต้องรู้เวลาเป๊ะ
+// เกิน 7 วันแล้วตัวเลขสัมพัทธ์อ่านยากกว่าวันที่จริง จึงถอยไปใช้วันที่
+const RELATIVE_FORMAT = new Intl.RelativeTimeFormat('th-TH', { numeric: 'auto' });
+const RELATIVE_STEPS = [
+    ['second', 60],
+    ['minute', 60],
+    ['hour', 24],
+    ['day', 7],
+];
+
+function formatRelativeTime(value) {
+    if (!value) return '—';
+    const date = parseServerDate(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    let diff = (date.getTime() - Date.now()) / 1000;
+    for (const [unit, limit] of RELATIVE_STEPS) {
+        if (Math.abs(diff) < limit) {
+            return RELATIVE_FORMAT.format(Math.round(diff), unit);
+        }
+        diff /= limit;
+    }
+    return formatDateTime(value);
 }
 
 // เวลาอย่างเดียว ("14:40") สำหรับ timeline ที่เห็นวันที่จากหัวข้ออยู่แล้ว
 function formatTime(value) {
     if (!value) return '—';
-    const date = new Date(String(value).replace(' ', 'T'));
+    const date = parseServerDate(value);
     if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 }
 
 /* ---------- Toast ---------- */
@@ -144,6 +179,15 @@ function emptyState(colspan, title, hint = '', iconName = 'icon-inbox') {
         <span class="empty-state-title">${escapeHtml(title)}</span>
         ${hint ? `<span>${escapeHtml(hint)}</span>` : ''}
     </td></tr>`;
+}
+
+// เวอร์ชันสำหรับรายการที่ไม่ใช่ตาราง (เช่นคิวในศูนย์ตรวจสอบ)
+function emptyStateBlock(title, hint = '', iconName = 'icon-inbox') {
+    return `<div class="empty-state">
+        ${icon(iconName)}
+        <span class="empty-state-title">${escapeHtml(title)}</span>
+        ${hint ? `<span>${escapeHtml(hint)}</span>` : ''}
+    </div>`;
 }
 
 /* ---------- Pagination ---------- */

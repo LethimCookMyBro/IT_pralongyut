@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
-    <title>ตรวจจับด้วย Local AI — Bangsaen Waste Vision</title>
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+    <title>ตรวจจับขยะด้วย AI — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260920-polish2">
+    <link rel="stylesheet" href="css/detect-polish.css?v=20260920-polish">
 </head>
 <body>
     <header class="site">
-        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <h1><a class="brand-link" href="index.html"><img class="brand-mark" src="assets/app-icon.svg" width="36" height="36" alt="">Bangsaen Waste Vision</a></h1>
         <nav class="site" aria-label="เมนูหลัก">
             <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
@@ -23,130 +25,137 @@
         </nav>
     </header>
 
-    <main>
+    <main class="detect-page">
         <section>
-            <div class="replay-banner warning">
-                <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                <span>AI รันบน<strong>เครื่อง local เท่านั้น</strong> กับ<strong>วิดีโออ้างอิง</strong> —
-                    ไม่ใช่กล้อง/CCTV ของเทศบาลบางแสน ไม่ใช่เหตุจริง และไม่ได้รันบน Railway
-                    AI ทำหน้าที่คัดกรอง คนเป็นผู้ยืนยันในศูนย์ตรวจสอบ</span>
-            </div>
-
             <div class="section-head detect-title-row">
                 <div>
-                    <h1 class="page-title">ตรวจจับด้วย Local AI</h1>
-                    <p class="muted">เลือกวิดีโอด้านล่างเพื่อดูว่าโมเดลตรวจจับขยะได้อย่างไร
-                        ถ้ามี worker ทำงานอยู่ หน้านี้จะแสดงเฟรมสด</p>
-                </div>
-                <div class="detector-status" id="detector-status" data-state="loading" role="status" aria-live="polite">
-                    <span class="detector-status-dot" aria-hidden="true"></span>
-                    <span id="detector-status-text">กำลังตรวจสถานะ…</span>
+                    <h1 class="page-title">ตรวจจับขยะด้วย AI <span class="demo-label">Replay Demo</span></h1>
+                    <p class="lede">เลือกพื้นที่เพื่อดูจุดที่ AI ตรวจพบ</p>
                 </div>
             </div>
+
         </section>
 
         <section>
-            <!-- ตัวเลือกวิดีโอเป็นการ์ดกดได้ ไม่ใช่ dropdown: เห็นทั้งสามตัวเลือกพร้อมกัน
-                 และกดแล้วเห็นผลทันทีในภาพด้านล่าง (dropdown ต้องกดสองครั้งจึงเห็นอะไร) -->
-            <h2 id="source-picker-label">เลือกวิดีโอที่ให้ AI ดู</h2>
+            <!-- ตัวเลือกเป็นการ์ดกดได้ ไม่ใช่ dropdown: เห็นทั้งสามพร้อมกัน
+                 และกดแล้ววิดีโอเปลี่ยนทันที -->
+            <h2 id="source-picker-label" class="visually-hidden">เลือกพื้นที่ที่ให้ AI ดู</h2>
             <div class="source-cards" role="radiogroup" aria-labelledby="source-picker-label" id="source-picker">
                 <button type="button" class="source-card" role="radio" aria-checked="true" data-source="road">
                     <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>บนบก</span>
-                    <h3>ขยะริมถนน</h3>
-                    <p class="muted">โมเดล pLitterStreet · <code>vid0012.mp4</code></p>
+                    <h3>ริมถนน</h3>
                 </button>
                 <button type="button" class="source-card" role="radio" aria-checked="false" data-source="city">
                     <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>บนบก</span>
-                    <h3>ขยะในเมือง / พื้นที่สาธารณะ</h3>
-                    <p class="muted">โมเดล pLitterStreet · <code>vid0269.mp4</code></p>
+                    <h3>พื้นที่สาธารณะ</h3>
                 </button>
                 <button type="button" class="source-card" role="radio" aria-checked="false" data-source="water">
                     <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-water"></use></svg>ทางน้ำ</span>
-                    <h3>ขยะในน้ำ</h3>
-                    <p class="muted">โมเดล pLitterFloat · <code>water-9736659.mp4</code></p>
+                    <h3>ทางน้ำ</h3>
                 </button>
             </div>
         </section>
 
         <section class="detect-grid">
             <div class="detect-viewer">
-                <div class="detect-frame-wrap" id="detect-frame-wrap">
-                    <!-- ภาพนี้เป็นได้สองอย่าง: เฟรมสดจาก worker หรือภาพตัวอย่างผลลัพธ์
-                         ป้ายมุมภาพบอกเสมอว่ากำลังดูอันไหน เพื่อไม่ให้เข้าใจผิดว่าเป็นของสด -->
-                    <img id="live-frame" alt="ผลการตรวจจับพร้อมกรอบที่โมเดลวาด">
-                    <span class="frame-badge" id="frame-badge">ตัวอย่างผลลัพธ์</span>
-                    <div class="detect-frame-empty" id="detect-frame-empty" hidden>
-                        <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                        <strong>ยังไม่มีภาพ</strong>
-                    </div>
+                <div class="detect-viewer-head" aria-live="polite">
+                    <h2 id="detect-viewer-title">ผลตรวจ · ริมถนน</h2>
+                    <span id="detect-media-mode">กำลังโหลด</span>
                 </div>
-                <p class="detect-caption" id="detect-caption">กำลังตรวจสถานะ…</p>
+                <div class="detect-stage" id="detect-stage">
+                    <!-- วิดีโอคือภาพหลักของหน้านี้ — เป็นผล inference จริงที่ถูกวาดกรอบไว้แล้ว
+                         ไม่มีวิดีโอ (เช่นบน Railway) จะสลับไปแสดงเฟรมตัวอย่างที่ commit ไว้แทน -->
+                    <video id="detect-video" controls autoplay muted loop playsinline
+                           preload="metadata" aria-describedby="detect-caption"></video>
+
+                    <img id="detect-fallback-img" alt="เฟรมตัวอย่างผลการตรวจจับ" hidden>
+
+                    <span class="frame-badge" id="frame-badge" hidden></span>
+                </div>
+                <p class="detect-caption" id="detect-caption">กำลังโหลด…</p>
+
+                <!-- บน Railway ไม่มีไฟล์วิดีโอ ต้องอธิบายสั้น ๆ ไม่ใช่ทำให้ดูเหมือนหน้า error -->
+                <p class="detect-local-note" id="detect-local-note" hidden>
+                    <svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg>
+                    <span>หน้านี้แสดงภาพผลตรวจจริง · วิดีโอเล่นได้บนเครื่องสาธิต</span>
+                </p>
             </div>
 
-            <aside class="detect-panel" aria-label="ข้อมูลการตรวจจับ">
-                <h2 id="panel-title">ผลการตรวจ</h2>
-                <dl class="summary-list">
-                    <div class="summary-row"><dt>แหล่งวิดีโอ</dt><dd id="live-source">—</dd></div>
-                    <div class="summary-row"><dt>ตรวจพบ</dt><dd><span id="live-count">—</span> ชิ้น</dd></div>
+            <aside class="detect-panel" aria-label="สรุปผลการตรวจจับ">
+                <dl class="summary-list detect-summary">
+                    <div class="summary-row"><dt>พบมากที่สุด</dt><dd><strong id="live-count">—</strong> ชิ้น</dd></div>
                     <div class="summary-row"><dt>ความมั่นใจสูงสุด</dt><dd id="live-confidence">—</dd></div>
-                    <div class="summary-row"><dt>อัปเดตล่าสุด</dt><dd id="live-age">—</dd></div>
+                    <div class="summary-row"><dt>สถานะ</dt><dd id="live-state">—</dd></div>
+                    <div class="summary-row"><dt>โมเดล</dt><dd id="live-model">—</dd></div>
                 </dl>
 
-                <div class="detect-post-state">
-                    <h3>ขั้นต่อไปของผลตรวจ</h3>
-                    <p class="muted" id="live-post-state">—</p>
-                    <a class="btn" href="vision.html">เปิดศูนย์ตรวจสอบ</a>
-                </div>
-
-                <!-- ข้อมูลเชิงเทคนิคพับไว้ ผู้ดูครั้งแรกไม่ต้องอ่านก็เข้าใจหน้านี้ได้ -->
-                <details class="tech-details">
-                    <summary>ข้อมูลเชิงเทคนิค</summary>
-                    <dl class="summary-list">
-                        <div class="summary-row"><dt>โมเดล</dt><dd id="live-model">—</dd></div>
-                        <div class="summary-row"><dt>เวลา inference</dt><dd id="live-inference">—</dd></div>
-                    </dl>
-                    <div class="detect-classes">
-                        <h3>ประเภทที่โมเดลรายงาน</h3>
-                        <ul id="live-classes"><li class="muted">—</li></ul>
-                    </div>
-                    <p class="muted">
-                        ความมั่นใจ (confidence) คือค่าที่โมเดลรายงานต่อเฟรม ไม่ใช่ความแม่นยำของระบบ
-                        และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
-                        <span class="term-en">(PROTOTYPE / UNCALIBRATED)</span>
-                    </p>
-                </details>
+                <a class="btn btn-primary btn-block" href="vision.html">
+                    <span>เปิดศูนย์ตรวจสอบ</span>
+                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+                </a>
             </aside>
         </section>
 
         <section>
-            <details class="tech-details" id="worker-howto">
-                <summary>อยากเห็นเฟรมสด ต้องรัน worker บนเครื่องตัวเอง</summary>
+            <!-- ทุกอย่างที่เป็นศัพท์เทคนิคอยู่ในนี้ที่เดียว หน้าแรกไม่ต้องอ่านก็เข้าใจได้ -->
+            <details class="tech-details" id="tech-details">
+                <summary>ข้อมูลทางเทคนิค</summary>
+                <p class="muted">วิดีโออ้างอิง ไม่ใช่กล้องเทศบาล คนเป็นผู้ตรวจยืนยัน และความมั่นใจของโมเดลไม่ใช่ค่าความแม่นยำของระบบ</p>
+
+                <dl class="summary-list">
+                    <div class="summary-row"><dt>จุด/กล้อง</dt><dd id="tech-camera">—</dd></div>
+                    <div class="summary-row"><dt>ไฟล์ต้นทาง</dt><dd id="tech-video">—</dd></div>
+                    <div class="summary-row"><dt>เฟรมที่ประมวลผล</dt><dd id="tech-frames">—</dd></div>
+                    <div class="summary-row"><dt>เฟรมที่พบวัตถุ</dt><dd id="tech-hits">—</dd></div>
+                    <div class="summary-row"><dt>จำนวนเฉลี่ยต่อเฟรม</dt><dd id="tech-avg">—</dd></div>
+                    <div class="summary-row"><dt>เวลา inference เฉลี่ย</dt><dd id="tech-inference">—</dd></div>
+                    <div class="summary-row"><dt>เกณฑ์ confidence</dt><dd id="tech-threshold">—</dd></div>
+                    <div class="summary-row"><dt>source_mode / record_origin</dt><dd id="tech-origin">replay / detector_run</dd></div>
+                </dl>
+
+                <h3>ประเภทที่โมเดลรายงาน</h3>
+                <ul id="live-classes"><li class="muted">—</li></ul>
+
+                <h3>Local worker</h3>
+                <div class="detector-status" id="detector-status" data-state="loading" role="status" aria-live="polite">
+                    <span class="detector-status-dot" aria-hidden="true"></span>
+                    <span id="detector-status-text">กำลังตรวจสถานะ…</span>
+                </div>
+                <p class="muted" id="worker-detail">—</p>
+                <div class="worker-frame" id="worker-frame-wrap" hidden>
+                    <img id="worker-frame" alt="เฟรมล่าสุดจาก worker ที่กำลังทำงาน">
+                    <span class="muted" id="worker-frame-caption"></span>
+                </div>
                 <p class="muted">
-                    ตัวโมเดลไม่ได้อยู่บนเว็บเซิร์ฟเวอร์ — Railway รันเฉพาะส่วน PHP/MySQL
-                    ส่วน AI เป็น Python worker ที่รันบนเครื่อง local แล้วเขียนเฟรมล่าสุดกับผลตรวจ
-                    ลงไฟล์ให้หน้านี้อ่าน ถ้าไม่ได้รัน worker หน้านี้จะแสดง “ตัวอย่างผลลัพธ์” แทน
+                    โมเดลไม่ได้อยู่บนเว็บเซิร์ฟเวอร์ — Railway รันเฉพาะ PHP/MySQL
+                    ส่วน AI เป็น Python worker บนเครื่อง local
                 </p>
-                <pre><code>C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road</code></pre>
+                <pre><code>C:\tmp\cv_venv\Scripts\python.exe local_vision\render_demo_videos.py
+C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road</code></pre>
+
                 <p class="muted">
-                    worker จะ POST ผลตรวจเข้า <code>api/vision.php</code> เป็น
-                    <span class="term-en">replay + detector_run</span> แล้วไปรวมเป็นเหตุให้คนตรวจในศูนย์ตรวจสอบ
+                    ความมั่นใจ (confidence) คือค่าที่โมเดลรายงานต่อเฟรม ไม่ใช่ความแม่นยำของระบบ
+                    และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
+                    <span class="term-en">(PROTOTYPE / UNCALIBRATED)</span>
                 </p>
             </details>
         </section>
 
-        <section class="webcam-section">
-            <h2>Webcam Preview <span class="origin-tag">โบนัส</span></h2>
-            <p class="muted">กล้องจะไม่ถูกขอสิทธิ์เองตอนเปิดหน้า ต้องกดปุ่มก่อน และพรีวิวนี้ไม่ส่งภาพขึ้น Cloud</p>
-            <div class="btn-row">
-                <button type="button" id="webcam-start" class="btn-ghost">เปิดพรีวิวเว็บแคม</button>
-                <button type="button" id="webcam-stop" class="btn-ghost" disabled>ปิดเว็บแคม</button>
-            </div>
-            <video id="webcam-preview" class="webcam-preview" autoplay playsinline muted hidden></video>
-            <p class="muted" id="webcam-note">พรีวิวในเบราว์เซอร์เท่านั้น ยังไม่ใช่ input ของ pLitter worker</p>
+        <section>
+            <details class="tech-details webcam-section">
+                <summary>Webcam Preview <span class="origin-tag">โบนัส</span></summary>
+                <p class="muted">กล้องจะไม่ถูกขอสิทธิ์เองตอนเปิดหน้า ต้องกดปุ่มก่อน และพรีวิวนี้ไม่ส่งภาพขึ้น Cloud</p>
+                <div class="btn-row">
+                    <button type="button" id="webcam-start" class="btn-ghost">เปิดพรีวิวเว็บแคม</button>
+                    <button type="button" id="webcam-stop" class="btn-ghost" disabled>ปิดเว็บแคม</button>
+                </div>
+                <video id="webcam-preview" class="webcam-preview" autoplay playsinline muted hidden></video>
+                <p class="muted" id="webcam-note">พรีวิวในเบราว์เซอร์เท่านั้น ยังไม่ใช่ input ของ pLitter worker</p>
+            </details>
         </section>
     </main>
 
-    <script src="js/ui.js"></script>
-    <script src="js/detect.js"></script>
+    <script src="js/ui.js?v=20260920-polish2"></script>
+    <script src="js/detect.js?v=20260920-polish"></script>
 </body>
 </html>

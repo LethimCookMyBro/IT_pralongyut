@@ -162,6 +162,17 @@ python morning\analyze.py
 
 ## Deploy
 
+### รูปแจ้งจุดขยะและวิดีโอสาธิต
+
+- แจ้งได้ด้วยสถานที่อย่างเดียว รูปและรายละเอียดเป็นทางเลือก; ไม่ประเมินน้ำหนักหรือสร้างผล AI จากรูปผู้แจ้ง
+- รับ JPEG/PNG/WEBP ไม่เกิน 5 MB ตรวจ MIME ฝั่ง server และใช้ชื่อสุ่มใน `uploads/reports/`
+- Railway app ปัจจุบันไม่มี volume สำหรับรูป: รูปอาจหายหลัง restart/redeploy; API คืน `image_path: null` เมื่อไฟล์หาย ข้อมูลเรื่องแจ้งใน MySQL ยังอยู่
+- Existing DB ต้องตรวจ `DESCRIBE reports` แล้วใช้เฉพาะ migration `004`/`005` ที่ยังขาด ห้ามใช้ `schema.sql`; `CREATE TABLE IF NOT EXISTS` ไม่อัปเดตตารางเดิม
+- Render วิดีโอด้วย `C:\tmp\cv_venv\Scripts\python.exe local_vision\render_demo_videos.py` แล้ว sync `afternoon/runtime/demo-videos/` ไป XAMPP
+- Road/city ใช้ pLitterStreet; water ใช้ pLitterFloat กรอบและ JSON มาจาก inference จริง จำนวนเป็นค่าสูงสุดต่อเฟรม ไม่ใช่จำนวนวัตถุไม่ซ้ำ
+- วิดีโอ/weights เป็น local-only ไม่รวม deployment; Railway แสดงภาพผลตรวจตัวอย่างพร้อมสถิติของภาพนั้น
+- หน้าเว็บใช้ badge เดโมขนาดเล็กและซ่อนคำอธิบายไว้ในรายละเอียด: ไม่มี CCTV เทศบาลจริง ยังไม่มี measured accuracy ของบางแสน และคนเป็นผู้ตัดสินสุดท้าย
+
 รายละเอียดอยู่ใน [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md) สรุปสั้น ๆ:
 
 - ขึ้น Railway **เฉพาะ** เว็บ PHP/MySQL ตั้ง root directory = `/afternoon`

@@ -1,48 +1,55 @@
-// Phase D — live status viewer for the local pLitter worker.
-// The worker owns inference. This page only polls a fixed read-only PHP endpoint.
+// หน้าตรวจจับด้วย AI (detect.html)
+//
+// ภาพหลักของหน้านี้คือ "วิดีโอที่ AI ตรวจแล้ว" ไม่ใช่ภาพนิ่ง
+// วิดีโอถูก render ไว้ล่วงหน้าโดย local_vision/render_demo_videos.py ซึ่งรันโมเดลจริง
+// แล้ววาดกรอบจากผลของโมเดลเอง ตัวเลขข้าง ๆ อ่านจาก JSON ที่ script ตัวเดียวกันเขียนไว้
+// จึงเป็นตัวเลขของการรันจริง ไม่ใช่ค่าที่พิมพ์ทิ้งไว้ในโค้ด
+//
+// กฎที่ห้ามผิด: ตัวเลขในแผงด้านข้าง ต้องเป็นของ "สิ่งที่เห็นอยู่บนจอ" เสมอ
+// ห้ามเอาตัวเลขของ worker ที่กำลังรัน source อื่นมาโชว์คู่กับวิดีโอที่เลือกอยู่
+// สถานะ/เฟรมของ worker จึงอยู่ในส่วนข้อมูลทางเทคนิคเท่านั้น
+//
+// ไม่มีไฟล์วิดีโอ (เช่นเปิดจาก Railway) → สลับไปแสดงเฟรมตัวอย่างที่ commit ไว้
+// พร้อมบอกว่าโหมดวิดีโอทำงานบนเครื่อง local — ต้องไม่ดูเหมือนหน้า error
 
+const POLL_MS = 2000;
+const VIDEO_DIR = 'runtime/demo-videos';
 
-// หน้านี้แสดงได้สองโหมด และต้องบอกให้ชัดเสมอว่ากำลังดูโหมดไหน:
-//   1) เฟรมสด - มี worker รันอยู่บนเครื่อง local
-//   2) ตัวอย่างผลลัพธ์ - ไม่มี worker (เช่นตอนเปิดจาก Railway) แสดงภาพที่ worker
-//      เคยรันไว้จริง เพื่อให้เห็นว่าโมเดลให้ผลอย่างไร ไม่ใช่ภาพจำลองและไม่ใช่ของสด
-
-const POLL_MS = 800;
-
-// ตัวเลขทั้งหมดอ่านจาก runtime/vision/latest.json ของเฟรมนั้น ๆ ตอนรัน worker จริง
-// ที่มา + คำสั่งที่ใช้รัน บันทึกไว้ใน assets/vision/README.md - ห้ามแก้ตัวเลขด้วยมือ
+// เฟรมสำรองสำหรับตอนไม่มีไฟล์วิดีโอ
+// ตัวเลขชุดนี้มาจากการรัน worker จริง บันทึกที่มาไว้ใน assets/vision/README.md
+// ห้ามแก้ด้วยมือให้ต่างจากไฟล์นั้น
 const SAMPLES = {
     road: {
         image: 'assets/vision/sample-road.jpg',
-        source_label: 'ขยะริมถนน',
+        source_label: 'ริมถนน',
         location: 'วิดีโออ้างอิง — ริมถนน',
         camera_name: 'REPLAY-ROAD-01',
         model: 'pLitterStreet',
-        detected_count: 1,
+        max_detected_count: 1,
         max_confidence: 0.5162,
-        inference_ms: 128.2,
+        avg_inference_ms: 128.2,
         classes: { Plastic: 1 },
     },
     city: {
         image: 'assets/vision/sample-city.jpg',
-        source_label: 'ขยะในเมือง / พื้นที่สาธารณะ',
+        source_label: 'พื้นที่สาธารณะ',
         location: 'วิดีโออ้างอิง — พื้นที่สาธารณะ',
         camera_name: 'REPLAY-CITY-01',
         model: 'pLitterStreet',
-        detected_count: 2,
+        max_detected_count: 2,
         max_confidence: 0.7609,
-        inference_ms: 114.0,
+        avg_inference_ms: 114.0,
         classes: { Plastic: 2 },
     },
     water: {
         image: 'assets/vision/sample-water.jpg',
-        source_label: 'ขยะในน้ำ',
+        source_label: 'ทางน้ำ',
         location: 'วิดีโออ้างอิง — ทางน้ำ',
         camera_name: 'REPLAY-WATER-01',
         model: 'pLitterFloat',
-        detected_count: 8,
+        max_detected_count: 8,
         max_confidence: 0.5268,
-        inference_ms: 35.5,
+        avg_inference_ms: 35.5,
         classes: { debris: 7, styrofoam: 1 },
     },
 };
@@ -52,34 +59,42 @@ const DEFAULT_SOURCE = 'road';
 const els = {
     status: document.getElementById('detector-status'),
     statusText: document.getElementById('detector-status-text'),
-    frame: document.getElementById('live-frame'),
-    frameEmpty: document.getElementById('detect-frame-empty'),
-    frameBadge: document.getElementById('frame-badge'),
-    panelTitle: document.getElementById('panel-title'),
+    stage: document.getElementById('detect-stage'),
+    video: document.getElementById('detect-video'),
+    fallbackImg: document.getElementById('detect-fallback-img'),
+    badge: document.getElementById('frame-badge'),
+    localNote: document.getElementById('detect-local-note'),
     picker: document.getElementById('source-picker'),
     caption: document.getElementById('detect-caption'),
-    source: document.getElementById('live-source'),
-    model: document.getElementById('live-model'),
+    viewerTitle: document.getElementById('detect-viewer-title'),
+    mediaMode: document.getElementById('detect-media-mode'),
     count: document.getElementById('live-count'),
     confidence: document.getElementById('live-confidence'),
-    inference: document.getElementById('live-inference'),
-    age: document.getElementById('live-age'),
+    state: document.getElementById('live-state'),
+    model: document.getElementById('live-model'),
     classes: document.getElementById('live-classes'),
-    postState: document.getElementById('live-post-state'),
+    techCamera: document.getElementById('tech-camera'),
+    techVideo: document.getElementById('tech-video'),
+    techFrames: document.getElementById('tech-frames'),
+    techHits: document.getElementById('tech-hits'),
+    techAvg: document.getElementById('tech-avg'),
+    techInference: document.getElementById('tech-inference'),
+    techThreshold: document.getElementById('tech-threshold'),
+    workerDetail: document.getElementById('worker-detail'),
+    workerFrameWrap: document.getElementById('worker-frame-wrap'),
+    workerFrame: document.getElementById('worker-frame'),
+    workerFrameCaption: document.getElementById('worker-frame-caption'),
     webcamStart: document.getElementById('webcam-start'),
     webcamStop: document.getElementById('webcam-stop'),
     webcamPreview: document.getElementById('webcam-preview'),
     webcamNote: document.getElementById('webcam-note'),
 };
 
-let pollTimer = null;
-let lastFrameUrl = '';
-let webcamStream = null;
-// source ที่ผู้ใช้เลือกดูตัวอย่าง - ตอน worker ทำงาน จะถูกตั้งตาม source จริงของ worker
 let selectedSource = DEFAULT_SOURCE;
-let workerIsLive = false;
-// กดเลือกเองแล้ว หน้าเว็บต้องไม่ดึงกลับไป source ของ worker ทุกครั้งที่ poll
-let userPicked = false;
+let pollTimer = null;
+let webcamStream = null;
+// เก็บ stats ของแต่ละ source ไว้ ไม่ต้องยิงซ้ำตอนสลับไปมา
+const statsCache = {};
 
 function percent(value) {
     if (value === null || value === undefined) return '—';
@@ -97,111 +112,162 @@ function renderClasses(classes) {
     if (!entries.length) {
         const li = document.createElement('li');
         li.className = 'muted';
-        li.textContent = 'ไม่พบวัตถุในเฟรมล่าสุด';
+        li.textContent = 'ไม่พบวัตถุ';
         els.classes.appendChild(li);
         return;
     }
-    for (const entry of entries) {
+    for (const [name, count] of entries) {
         const li = document.createElement('li');
-        li.textContent = entry[0] + ': ' + entry[1];
+        li.textContent = `${name}: ${count}`;
         els.classes.appendChild(li);
     }
 }
 
-// ไม่มี worker -> ยังต้องเห็นว่าโมเดลทำอะไรได้ จึงแสดงผลจริงที่เคยรันไว้
-// ทุกช่องที่แสดงตัวเลขต้องมาจาก SAMPLES ชุดเดียวกัน ไม่ผสมกับค่าสด
-function renderSample(message) {
+function setTech(fields) {
+    els.techCamera.textContent = fields.camera ?? '—';
+    els.techVideo.textContent = fields.video ?? '—';
+    els.techFrames.textContent = fields.frames ?? '—';
+    els.techHits.textContent = fields.hits ?? '—';
+    els.techAvg.textContent = fields.avg ?? '—';
+    els.techInference.textContent = fields.inference ?? '—';
+    els.techThreshold.textContent = fields.threshold ?? '—';
+}
+
+/* ---------- วิดีโอ (ภาพหลักของหน้า) ---------- */
+
+function showVideo(stats) {
+    els.viewerTitle.textContent = `วิดีโอผลตรวจ · ${SAMPLES[selectedSource].source_label}`;
+    els.mediaMode.textContent = `เล่นซ้ำ · ${(stats.frames / stats.fps).toFixed(1)} วินาที`;
+    els.video.hidden = false;
+    els.fallbackImg.hidden = true;
+    els.localNote.hidden = true;
+    els.badge.hidden = false;
+    els.badge.textContent = 'ผลตรวจจาก AI';
+    els.badge.classList.add('is-live');
+
+    els.count.textContent = String(stats.max_detected_count);
+    els.confidence.textContent = percent(stats.max_confidence);
+    els.state.textContent = 'วิดีโอเล่นซ้ำ';
+    els.model.textContent = stats.model;
+    renderClasses(stats.classes);
+
+    els.caption.textContent =
+        `${stats.source_label} · จำนวนแสดงค่าสูงสุดต่อเฟรม`;
+
+    setTech({
+        camera: stats.camera_name,
+        video: stats.source_video,
+        frames: `${stats.frames} เฟรม @ ${stats.fps} fps`,
+        hits: `${stats.frames_with_detection} เฟรม`,
+        avg: `${stats.avg_detected_count} ชิ้น`,
+        inference: `${stats.avg_inference_ms} ms`,
+        threshold: String(stats.confidence_threshold),
+    });
+}
+
+// ไม่มีไฟล์วิดีโอ → เฟรมจริงที่เคยรันไว้ + บอกว่าโหมดวิดีโออยู่บนเครื่อง local
+function showFallback() {
     const sample = SAMPLES[selectedSource] ?? SAMPLES[DEFAULT_SOURCE];
-    workerIsLive = false;
-    setStatus('offline', message);
+    els.viewerTitle.textContent = `ภาพผลตรวจ · ${sample.source_label}`;
+    els.mediaMode.textContent = 'ภาพตัวอย่าง';
+    els.video.hidden = true;
+    els.video.removeAttribute('src');
+    els.fallbackImg.hidden = false;
+    els.fallbackImg.src = sample.image;
+    els.localNote.hidden = false;
+    els.badge.hidden = false;
+    els.badge.textContent = 'เฟรมตัวอย่าง';
+    els.badge.classList.remove('is-live');
 
-    setFrame(sample.image, 'ตัวอย่างผลลัพธ์');
-    els.panelTitle.textContent = 'ตัวอย่างผลการตรวจ';
-    els.caption.textContent = sample.camera_name + ' · ' + sample.location
-        + ' — เฟรมที่ worker รันไว้จริง (ไม่ใช่ภาพสด)';
-    els.source.textContent = sample.source_label + ' · ' + sample.location;
-    els.model.textContent = sample.model;
-    els.count.textContent = String(sample.detected_count);
+    els.count.textContent = String(sample.max_detected_count);
     els.confidence.textContent = percent(sample.max_confidence);
-    els.inference.textContent = Number(sample.inference_ms).toFixed(1) + ' ms';
-    els.age.textContent = 'ไม่ใช่ข้อมูลสด - เป็นตัวอย่าง';
+    els.state.textContent = 'ภาพตัวอย่าง';
+    els.model.textContent = sample.model;
     renderClasses(sample.classes);
-    els.postState.textContent = 'ตอน worker ทำงานจริง ผลตรวจจะถูกส่งเข้าคิว '
-        + 'แล้วรวมเป็นเหตุให้เจ้าหน้าที่ยืนยันในศูนย์ตรวจสอบ';
+    els.caption.textContent = `${sample.source_label} · ภาพผลตรวจจาก AI`;
+
+    setTech({
+        camera: sample.camera_name,
+        video: '—',
+        frames: '1 เฟรม',
+        hits: '1 เฟรม',
+        avg: `${sample.max_detected_count} ชิ้น`,
+        inference: `${sample.avg_inference_ms} ms`,
+        threshold: '0.25',
+    });
 }
 
-// ป้ายมุมภาพเป็นตัวบอกว่ากำลังดูของสดหรือตัวอย่าง - ต้องอัปเดตคู่กับ src เสมอ
-function setFrame(url, badge) {
-    if (url !== lastFrameUrl) {
-        lastFrameUrl = url;
-        els.frame.src = url;
+async function loadSource(sourceId) {
+    selectedSource = sourceId;
+    syncPicker();
+
+    if (statsCache[sourceId] === 'missing') {
+        showFallback();
+        return;
     }
-    els.frame.hidden = false;
-    els.frameEmpty.hidden = true;
-    els.frameBadge.hidden = false;
-    els.frameBadge.textContent = badge;
-    els.frameBadge.classList.toggle('is-live', badge === 'เฟรมสด');
+
+    let stats = statsCache[sourceId];
+    if (!stats) {
+        try {
+            const res = await fetch(`${VIDEO_DIR}/${sourceId}.json`, { cache: 'no-store' });
+            if (!res.ok) throw new Error('no stats');
+            stats = await res.json();
+            statsCache[sourceId] = stats;
+        } catch (err) {
+            statsCache[sourceId] = 'missing';
+            if (selectedSource !== sourceId) return;
+            showFallback();
+            return;
+        }
+    }
+
+    // ตั้ง src ก่อน แล้วรอ event: โหลดไม่ได้เมื่อไหร่ค่อยสลับไป fallback
+    // (ไม่เดาล่วงหน้าว่ามีหรือไม่มีไฟล์ ให้ browser เป็นคนบอก)
+    if (selectedSource !== sourceId) return;
+    els.video.src = `${VIDEO_DIR}/${stats.video}`;
+    els.video.load();
+    showVideo(stats);
 }
 
-function renderSnapshot(data) {
-    const snap = data.snapshot;
-    const state = data.status === 'live' ? 'live' : 'stale';
-    workerIsLive = true;
-    setStatus(state, data.message);
+els.video.addEventListener('error', () => {
+    if (els.video.getAttribute('src')) showFallback();
+});
 
-    // worker เป็นเจ้าของ source จริง - ตัวเลือกบนหน้าเว็บตามมันไป ไม่ใช่สั่งมัน
-    if (!userPicked && snap.source_id && SAMPLES[snap.source_id]) {
-        selectedSource = snap.source_id;
-        syncPicker();
-    }
-    els.panelTitle.textContent = 'ผลการตรวจล่าสุด';
-    els.source.textContent = snap.source_label + ' · ' + snap.location;
-    els.model.textContent = snap.model;
-    els.count.textContent = String(snap.detected_count);
-    els.confidence.textContent = percent(snap.max_confidence);
-    els.inference.textContent = snap.inference_ms === null ? '—' : Number(snap.inference_ms).toFixed(1) + ' ms';
-    els.age.textContent = data.age_seconds + ' วินาทีที่แล้ว';
-    renderClasses(snap.classes);
-
-    if (snap.last_post_status === 201) {
-        els.postState.textContent = 'ส่ง observation ล่าสุดสำเร็จ' + (snap.last_post_at ? ' · ' + snap.last_post_at : '');
-    } else if (snap.last_post_error) {
-        els.postState.textContent = 'ส่ง observation ไม่สำเร็จ: ' + snap.last_post_error;
-    } else {
-        els.postState.textContent = 'เฟรมล่าสุดยังไม่ถึงรอบส่ง observation';
-    }
-
-    if (data.frame_url) {
-        // เฟรมค้างไม่ใช่เฟรมสด - ป้ายต้องต่างกัน ไม่งั้นภาพเก่าดูเหมือนของตอนนี้
-        setFrame(data.frame_url, state === 'live' ? 'เฟรมสด' : 'เฟรมล่าสุด (ค้าง)');
-    } else {
-        els.frame.hidden = true;
-        els.frameEmpty.hidden = false;
-        els.frameBadge.hidden = true;
-    }
-
-    els.caption.textContent = snap.camera_name + ' · ' + snap.location + ' · ' + snap.generated_at;
-}
+/* ---------- สถานะ worker (ข้อมูลประกอบ ไม่ใช่ภาพหลัก) ---------- */
 
 async function pollDetection() {
     try {
         const response = await fetch('api/live-detection.php', { cache: 'no-store' });
         const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error || 'HTTP ' + response.status);
-        }
+        if (!response.ok) throw new Error(data.error || 'HTTP ' + response.status);
+
         if (!data.available || !data.snapshot) {
-            renderSample(data.message || 'ยังไม่มี worker ทำงานอยู่ - แสดงตัวอย่างผลลัพธ์');
-        } else if (userPicked && data.snapshot.source_id !== selectedSource) {
-            // worker รัน source อื่นอยู่ - แสดงตัวอย่างของอันที่ผู้ใช้เลือก
-            // ห้ามผสมภาพของ source หนึ่งกับตัวเลขของอีก source
-            renderSample('worker กำลังรัน ' + data.snapshot.source_label + ' อยู่ - นี่คือตัวอย่างของวิดีโอที่เลือก');
-            workerIsLive = true;  // renderSample ตั้ง false ไว้ ต้องตั้งกลับหลังเรียก
+            setStatus('offline', 'โหมดตัวอย่าง (ไม่มี AI ทำงานอยู่)');
+            els.workerDetail.textContent = data.message || 'ไม่มี worker ทำงานอยู่บนเครื่องนี้';
+            els.workerFrameWrap.hidden = true;
+            return;
+        }
+
+        const snap = data.snapshot;
+        const live = data.status === 'live';
+        setStatus(live ? 'live' : 'stale', live ? 'Local AI กำลังทำงาน' : 'Local AI หยุดไปเมื่อครู่');
+        els.workerDetail.textContent =
+            `${snap.source_label} · ${snap.camera_name} · พบ ${snap.detected_count} ชิ้น · `
+            + `ความมั่นใจสูงสุด ${percent(snap.max_confidence)} · อัปเดต ${data.age_seconds} วินาทีที่แล้ว`;
+
+        if (data.frame_url) {
+            els.workerFrame.src = data.frame_url;
+            els.workerFrameCaption.textContent = live
+                ? 'เฟรมสดจาก worker'
+                : 'เฟรมล่าสุด (ค้าง) จาก worker';
+            els.workerFrameWrap.hidden = false;
         } else {
-            renderSnapshot(data);
+            els.workerFrameWrap.hidden = true;
         }
     } catch (error) {
-        renderSample('อ่านสถานะ detector ไม่สำเร็จ - แสดงตัวอย่างผลลัพธ์');
+        setStatus('offline', 'โหมดตัวอย่าง');
+        els.workerDetail.textContent = 'อ่านสถานะ worker ไม่สำเร็จ';
+        els.workerFrameWrap.hidden = true;
     }
 }
 
@@ -221,6 +287,8 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopPolling();
     else startPolling();
 });
+
+/* ---------- Webcam (โบนัส) ---------- */
 
 els.webcamStart.addEventListener('click', async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -251,6 +319,8 @@ els.webcamStop.addEventListener('click', () => {
     els.webcamNote.textContent = 'พรีวิวในเบราว์เซอร์เท่านั้น ยังไม่ใช่ input ของ pLitter worker';
 });
 
+/* ---------- ตัวเลือกพื้นที่ ---------- */
+
 function syncPicker() {
     for (const card of els.picker.children) {
         card.setAttribute('aria-checked', String(card.dataset.source === selectedSource));
@@ -259,15 +329,9 @@ function syncPicker() {
 
 els.picker.addEventListener('click', (event) => {
     const card = event.target.closest('.source-card');
-    if (!card || !SAMPLES[card.dataset.source]) return;
-    selectedSource = card.dataset.source;
-    userPicked = true;
-    syncPicker();
-    // เปลี่ยน source ที่หน้าเว็บไม่ได้ - worker เป็นคนเลือกตอนสั่งรัน
-    // จึงแสดงตัวอย่างของ source ที่กด แล้วรอบ poll ถัดไปจะดึงกลับไปที่ของสดเอง
-    renderSample('ตัวอย่างของวิดีโอที่เลือก'
-        + (workerIsLive ? ' - worker กำลังรัน source อื่นอยู่' : ''));
+    if (!card || !SAMPLES[card.dataset.source] || card.dataset.source === selectedSource) return;
+    loadSource(card.dataset.source);
 });
 
-syncPicker();
+loadSource(DEFAULT_SOURCE);
 startPolling();

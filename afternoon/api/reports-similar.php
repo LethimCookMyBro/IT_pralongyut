@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
-require __DIR__ . '/../lib/validate.php';
-require __DIR__ . '/../lib/pagination.php';
-require __DIR__ . '/../lib/report_config.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/validate.php';
+require_once __DIR__ . '/../lib/pagination.php';
+require_once __DIR__ . '/../lib/report_config.php';
 
 // GET /api/reports-similar.php?waste_type=general&location=...&latitude=..&longitude=..
 //
@@ -14,8 +14,9 @@ require __DIR__ . '/../lib/report_config.php';
 // ผู้ใช้ยังส่งรายการใหม่ได้เสมอ — POST /api/reports.php ไม่เรียกฟังก์ชันนี้
 //
 // เกณฑ์: PROTOTYPE / UNCALIBRATED (ดู lib/report_config.php)
-// - มีพิกัด  → waste_type เดียวกัน + อยู่ในรัศมี REPORT_DUPLICATE_RADIUS_METERS
-// - ไม่มีพิกัด → waste_type เดียวกัน + ชื่อสถานที่ใกล้เคียงกัน (LIKE)
+// - มีพิกัด  → อยู่ในรัศมี REPORT_DUPLICATE_RADIUS_METERS
+// - ไม่มีพิกัด → ชื่อสถานที่ใกล้เคียงกัน (LIKE)
+// - ส่ง waste_type มาด้วย = แคบลงอีกชั้น (ไม่บังคับ ฟอร์มประชาชนไม่ส่งแล้ว)
 // ทั้งสองแบบนับเฉพาะรายการที่ยังไม่ RESOLVED และอยู่ในช่วง window
 
 function haversine_meters(float $lat1, float $lng1, float $lat2, float $lng2): float
@@ -31,8 +32,12 @@ function haversine_meters(float $lat1, float $lng1, float $lat2, float $lng2): f
 function get_similar_reports(): void
 {
     try {
+        // waste_type ไม่บังคับแล้ว — ฟอร์มของประชาชนไม่ถามประเภทขยะอีกต่อไป (SPEC §2.2)
+        // ไม่ส่งมา = เทียบด้วยตำแหน่ง/ชื่อสถานที่อย่างเดียว ซึ่งเป็นสิ่งที่ผู้ใช้กรอกจริง
         $waste_type = $_GET['waste_type'] ?? null;
-        if (!is_string($waste_type) || !in_array($waste_type, VALID_WASTE_TYPES, true)) {
+        if ($waste_type === null || $waste_type === '' || $waste_type === 'all') {
+            $waste_type = null;
+        } elseif (!is_string($waste_type) || !in_array($waste_type, VALID_WASTE_TYPES, true)) {
             throw new InvalidArgumentException('waste_type: ต้องเป็นหนึ่งใน ' . implode(', ', VALID_WASTE_TYPES));
         }
         $latitude = validate_coordinate($_GET['latitude'] ?? null, 90.0, 'latitude');
@@ -48,11 +53,16 @@ function get_similar_reports(): void
     $sql = "SELECT id, location, latitude, longitude, location_source,
                    waste_type, amount_kg, detail, status, created_at
             FROM reports
-            WHERE waste_type = :waste_type
-              AND status <> 'RESOLVED'
+            WHERE status <> 'RESOLVED'
               AND created_at >= DATE_SUB(NOW(), INTERVAL $window_days DAY)";
-    $params = ['waste_type' => $waste_type];
+    $params = [];
     $rule = '';
+    $scope = 'any waste type';
+    if ($waste_type !== null) {
+        $sql .= ' AND waste_type = :waste_type';
+        $params['waste_type'] = $waste_type;
+        $scope = 'same waste_type';
+    }
 
     if ($latitude !== null && $longitude !== null) {
         // กรองด้วย bounding box ใน SQL ก่อน แล้วค่อยวัดระยะจริงด้วย haversine ใน PHP
@@ -69,7 +79,7 @@ function get_similar_reports(): void
         $params['max_lat'] = $latitude + $lat_delta;
         $params['min_lng'] = $longitude - $lng_delta;
         $params['max_lng'] = $longitude + $lng_delta;
-        $rule = 'same waste_type within ' . (int)$radius . 'm radius (uncalibrated)';
+        $rule = $scope . ' within ' . (int)$radius . 'm radius (uncalibrated)';
     } else {
         $pattern = search_like_pattern($_GET['location'] ?? null);
         if ($pattern === null) {
@@ -82,7 +92,7 @@ function get_similar_reports(): void
         }
         $sql .= " AND location LIKE :location";
         $params['location'] = $pattern;
-        $rule = 'same waste_type and similar location text';
+        $rule = $scope . ' and similar location text';
     }
 
     $sql .= ' ORDER BY created_at DESC, id DESC LIMIT 50';
@@ -94,7 +104,7 @@ function get_similar_reports(): void
     $similar = [];
     foreach ($rows as $row) {
         $row['id'] = (int)$row['id'];
-        $row['amount_kg'] = (int)$row['amount_kg'];
+        $row['amount_kg'] = $row['amount_kg'] !== null ? (int)$row['amount_kg'] : null;
         $row['latitude'] = $row['latitude'] !== null ? (float)$row['latitude'] : null;
         $row['longitude'] = $row['longitude'] !== null ? (float)$row['longitude'] : null;
         $row['distance_m'] = null;

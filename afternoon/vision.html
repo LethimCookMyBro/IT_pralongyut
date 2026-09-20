@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
     <title>ศูนย์ตรวจสอบ — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260920-polish2">
 </head>
 <body>
     <header class="site">
-        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <h1><a class="brand-link" href="index.html"><img class="brand-mark" src="assets/app-icon.svg" width="36" height="36" alt="">Bangsaen Waste Vision</a></h1>
         <nav class="site" aria-label="เมนูหลัก">
             <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
@@ -25,22 +26,9 @@
 
     <main>
         <section>
-            <!-- แบนเนอร์เดียว: ข้อความสองอันเดิมซ้ำกับย่อหน้าแนะนำด้านล่าง
-                 ข้อความที่ต้องคงไว้คือ replay + ไม่มี CCTV จริง + ยังไม่ปรับเทียบ -->
-            <div class="replay-banner warning">
-                <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                <span>โหมดเล่นซ้ำ (replay) — หน้านี้มีทั้ง <strong>ข้อมูลสาธิต</strong> และ
-                    <strong>ผลจาก AI ที่รันจริงบนวิดีโออ้างอิง</strong> ดูป้ายที่มาของแต่ละเหตุ
-                    ยังไม่ได้เชื่อมกล้อง/CCTV ของเทศบาล ไม่ใช่เหตุจริงจากบางแสน
-                    และยังไม่ปรับเทียบกับพื้นที่ <span class="term-en">(PROTOTYPE / UNCALIBRATED)</span></span>
-            </div>
-
             <h1 class="page-title">ศูนย์ตรวจสอบ</h1>
-            <p class="muted">
-                ข้อมูลการตรวจพบรายครั้ง (raw observation) ไม่เท่ากับหนึ่งเหตุ และไม่เท่ากับหนึ่งงานของเจ้าหน้าที่
-                หน้านี้ให้คนตรวจ “เหตุ” ที่ระบบรวมแล้ว เพื่อลดการแจ้งซ้ำจากภาพหลายเฟรม
-                <span class="term-en">observation ≠ incident ≠ task</span>
-            </p>
+            <p class="lede">เลือกจุดที่ต้องตรวจ แล้วเปิดตรวจสอบ</p>
+            <span class="demo-label">Replay</span>
 
             <!-- แบ่งงานตาม "ต้องทำอะไรต่อ" — เปิดหน้ามาเห็นงานที่ต้องทำตอนนี้ ไม่ใช่ทุกอย่างปนกัน
                  การกรองทำที่ฝั่ง server (api/vision.php?view=…) จึงรองรับข้อมูลจำนวนมากได้ -->
@@ -52,61 +40,61 @@
                     ต้องดำเนินการ<span class="view-tab-count" data-count="to_act">–</span>
                 </button>
                 <button type="button" class="view-tab" role="tab" data-view="history" aria-selected="false" aria-controls="incident-list">
-                    ประวัติ<span class="view-tab-count" data-count="history">–</span>
+                    เสร็จแล้ว<span class="view-tab-count" data-count="history">–</span>
                 </button>
             </div>
-            <p class="muted" id="queue-total"></p>
         </section>
 
         <section id="incident-list">
-            <div class="section-head">
-                <h2 id="list-title">เหตุที่รอการตรวจ</h2>
-            </div>
-            <p class="muted" id="priority-note">
-                ลำดับความสำคัญอธิบายได้: รอตรวจสอบมาก่อน แล้วเรียงตามจำนวนครั้งที่พบ จำนวนสูงสุดที่ตรวจพบ และความล่าสุด
-                ไม่มีการให้คะแนนถ่วงน้ำหนัก และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
-            </p>
-
-            <form class="filter-bar" id="filter-bar" role="search">
-                <label class="field field-search" for="filter-q">ค้นหาสถานที่หรือชื่อกล้อง
-                    <input type="search" id="filter-q" name="q" placeholder="เช่น หาดบางแสน, CAM-01" autocomplete="off">
+            <form class="filter-bar filter-bar-compact" id="filter-bar" role="search">
+                <label class="field field-search" for="filter-q">
+                    <span class="visually-hidden">ค้นหาสถานที่หรือชื่อกล้อง</span>
+                    <input type="search" id="filter-q" name="q" placeholder="ค้นหาสถานที่ เช่น หาดบางแสน" autocomplete="off">
                 </label>
-                <label class="field" for="filter-area">ประเภทพื้นที่
-                    <select id="filter-area" name="area_type">
-                        <option value="">ทั้งหมด</option>
-                        <option value="land">บนบก</option>
-                        <option value="water">ทางน้ำ</option>
-                    </select>
-                </label>
-                <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+                <details class="filter-more" id="filter-more">
+                    <summary>ตัวกรอง</summary>
+                    <div class="filter-more-body">
+                        <label class="field" for="filter-area">ประเภทพื้นที่
+                            <select id="filter-area" name="area_type">
+                                <option value="">ทั้งหมด</option>
+                                <option value="land">บนบก</option>
+                                <option value="water">ทางน้ำ</option>
+                            </select>
+                        </label>
+                        <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+                    </div>
+                </details>
             </form>
 
-            <!-- Phase D: คิวเหลือเฉพาะข้อมูลที่ใช้ตัดสินใจว่าจะเปิดดูอันไหน
-                 ข้อมูลเทคนิค (พบครั้งแรก / จำนวนสูงสุด / ประเภทพื้นที่ /
-                 ความมั่นใจของโมเดล / ข้อมูลการตรวจพบ) ย้ายไปหน้ารายละเอียด -->
-            <div class="table-wrap">
-                <table id="vision-table" class="as-cards">
-                    <thead>
-                        <tr>
-                            <th>สถานที่</th>
-                            <th>จุด/กล้อง</th>
-                            <th>พบล่าสุด</th>
-                            <th class="num">จำนวนครั้งที่พบ</th>
-                            <th>แนวโน้ม</th>
-                            <th>สถานะ</th>
-                            <th><span class="visually-hidden">ดูรายละเอียด</span></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+            <h2 id="list-title" class="visually-hidden">เหตุที่รอการตรวจ</h2>
+
+            <!-- คิวเป็นรายการที่กวาดตาได้ ไม่ใช่ตาราง 7 คอลัมน์
+                 แต่ละแถวตอบแค่ "ที่ไหน / พบบ่อยแค่ไหน / เมื่อไหร่ / สถานะ / กดอะไรต่อ"
+                 ชื่อกล้อง ความมั่นใจ แนวโน้ม และที่มาเชิงเทคนิคอยู่ในหน้ารายละเอียด -->
+            <ul class="queue-list" id="incident-queue"></ul>
 
             <nav class="pagination" id="vision-pagination"></nav>
+
+            <details class="tech-details">
+                <summary>วิธีจัดลำดับและข้อจำกัด</summary>
+                <p class="muted">ใช้วิดีโออ้างอิง ยังไม่ได้เชื่อมกล้องเทศบาล และไม่ใช่เหตุจริงจากบางแสน</p>
+                <p class="muted">
+                    ข้อมูลการตรวจพบรายครั้งไม่เท่ากับหนึ่งเหตุ และไม่เท่ากับหนึ่งงานของเจ้าหน้าที่
+                    หน้านี้ให้คนตรวจ “เหตุ” ที่ระบบรวมแล้ว เพื่อลดการแจ้งซ้ำจากภาพหลายเฟรม
+                    <span class="term-en">observation ≠ incident ≠ task</span>
+                </p>
+                <p class="muted">
+                    ลำดับ: รอตรวจสอบมาก่อน แล้วเรียงตามจำนวนครั้งที่พบ จำนวนสูงสุดที่ตรวจพบ และความล่าสุด
+                    ไม่มีการให้คะแนนถ่วงน้ำหนัก และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
+                    <span class="term-en">(PROTOTYPE / UNCALIBRATED)</span>
+                </p>
+                <p class="muted" id="queue-total"></p>
+            </details>
         </section>
     </main>
 
-    <script src="js/ui.js"></script>
-    <script src="js/vision-common.js"></script>
-    <script src="js/vision.js"></script>
+    <script src="js/ui.js?v=20260920-polish2"></script>
+    <script src="js/vision-common.js?v=20260920-polish"></script>
+    <script src="js/vision.js?v=20260920-polish"></script>
 </body>
 </html>

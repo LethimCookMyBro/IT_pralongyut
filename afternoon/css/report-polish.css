@@ -1,0 +1,33 @@
+/* Keep the report form compact without changing shared page components. */
+.report-page .lede { margin-bottom: 8px; }
+.report-page .demo-label { margin-bottom: 16px; }
+.report-page .report-form { gap: 24px; padding: 24px; }
+.report-page .step { min-width: 0; gap: 12px; }
+.report-page .step > legend { margin-bottom: 12px; }
+.report-page .step + .step { border-top: 1px solid var(--color-border); padding-top: 20px; }
+.report-page .location-entry { margin-top: 4px; font-size: var(--text-sm); }
+.report-page .location-status { margin: 0; }
+.report-page .location-manual > summary { justify-content: space-between; min-height: 44px; padding: 8px 0; }
+.report-page .location-manual > summary::after {
+    content: ''; width: 8px; height: 8px; margin: 0 4px 4px 12px;
+    border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+    transform: rotate(45deg); flex: 0 0 auto;
+}
+.report-page .location-manual[open] > summary::after { transform: rotate(225deg); margin-bottom: -4px; }
+.report-page .location-manual > summary::-webkit-details-marker { display: none; }
+.report-page .location-manual-body { padding-top: 4px; }
+.report-page .photo-actions { gap: 12px; }
+.report-page .photo-actions button { flex: 1 1 0; min-width: 0; }
+.report-page .field-hint { margin: 0; }
+.report-page .photo-preview img { max-height: 240px; }
+.report-page .photo-preview figcaption { padding: 12px; }
+.report-page #photo-preview-name { overflow-wrap: anywhere; min-width: 0; }
+.report-page .optional-tag { padding: 2px 8px; }
+.report-page textarea { min-height: 88px; resize: vertical; }
+.report-page .char-counter { font-size: var(--text-xs); }
+.report-page .form-footnote { margin-top: 16px; font-size: var(--text-sm); }
+@media (max-width: 480px) {
+    .report-page .report-form { padding: 16px; gap: 20px; }
+    .report-page .step + .step { padding-top: 16px; }
+    .report-page .photo-preview figcaption { gap: 8px; }
+}

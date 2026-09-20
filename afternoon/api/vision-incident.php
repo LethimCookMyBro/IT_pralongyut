@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
-require __DIR__ . '/../lib/vision_config.php';
-require __DIR__ . '/../lib/vision_evidence.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/vision_config.php';
+require_once __DIR__ . '/../lib/vision_evidence.php';
 
 // GET /api/vision-incident.php?id=<incident_id>
 // อ่าน incident เดียวสำหรับหน้ารายละเอียด (incident.html)

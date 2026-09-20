@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
-require __DIR__ . '/../lib/validate.php';
-require __DIR__ . '/../lib/pagination.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/validate.php';
+require_once __DIR__ . '/../lib/pagination.php';
 
 // GET /api/reports.php?page=1&per_page=10&waste_type=general&status=PENDING&record_origin=citizen&q=บางแสน
 // คืน { reports: [...], pagination: { page, per_page, total, total_pages } }
@@ -53,7 +53,7 @@ function get_reports(): void
     $offset = $paging['offset'];
     $stmt = $pdo->prepare(
         "SELECT id, location, latitude, longitude, location_source, record_origin,
-                waste_type, amount_kg, detail, status, created_at
+                waste_type, amount_kg, detail, image_path, status, created_at
          FROM reports$where
          ORDER BY created_at DESC, id DESC
          LIMIT $limit OFFSET $offset"
@@ -79,36 +79,73 @@ function report_filter(mixed $value, array $allowed, string $name): ?string
 }
 
 // PDO คืน DECIMAL เป็น string — ส่ง JSON เป็น number/null ให้ frontend ใช้ตรง ๆ ได้
+// amount_kg ต้องคง null ไว้ ห้าม cast เป็น 0: "ไม่รู้" กับ "ศูนย์กิโล" ไม่ใช่เรื่องเดียวกัน
+// image_path ตรวจซ้ำตอนอ่าน — แถวที่ถูกแก้มือหรือไฟล์หาย (เช่น Railway redeploy) กลายเป็น null
 function cast_report_row(array $row): array
 {
     $row['id'] = (int)$row['id'];
-    $row['amount_kg'] = (int)$row['amount_kg'];
+    $row['amount_kg'] = $row['amount_kg'] !== null ? (int)$row['amount_kg'] : null;
     $row['latitude'] = $row['latitude'] !== null ? (float)$row['latitude'] : null;
     $row['longitude'] = $row['longitude'] !== null ? (float)$row['longitude'] : null;
+    $row['image_path'] = report_photo_path_or_null($row['image_path'] ?? null);
     return $row;
 }
 
+// POST รับได้สองแบบ:
+//   application/json       — ไม่มีรูป (worker/สคริปต์/ฟอร์มที่ผู้ใช้ไม่ได้แนบรูป)
+//   multipart/form-data    — มีรูป, field ชื่อ photo
+// ทั้งสองทางผ่าน validate_report() ตัวเดียวกัน จึงได้กฎเดียวกันเสมอ
 function post_report(): void
 {
-    $data = json_decode(file_get_contents('php://input'), true);
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-        json_error("Invalid JSON", 400);
+    $saved_photo = null;
+    $is_multipart = str_contains($_SERVER['CONTENT_TYPE'] ?? '', 'multipart/form-data');
+
+    if ($is_multipart) {
+        $data = $_POST;
+        try {
+            // บันทึกไฟล์ก่อน แล้วค่อยเอา path ที่ระบบตั้งชื่อเองเข้า validate
+            // ถ้ารูปใช้ไม่ได้ ต้องตอบ 422 ไม่ใช่เงียบ ๆ บันทึกเรื่องแจ้งโดยไม่มีรูป
+            if (isset($data['photo'])) {
+                throw new InvalidArgumentException('photo: malformed upload');
+            }
+            $saved_photo = save_report_photo($_FILES['photo'] ?? null);
+            $data['image_path'] = $saved_photo;
+        } catch (InvalidArgumentException $e) {
+            json_error($e->getMessage(), 422);
+        }
+    } else {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            json_error("Invalid JSON", 400);
+        }
+        // Only this request's uploaded file may be attached to a new report.
+        $data['image_path'] = null;
     }
 
     try {
         $clean = validate_report($data);
     } catch (InvalidArgumentException $e) {
+        if ($saved_photo !== null) {
+            @unlink(__DIR__ . '/../' . $saved_photo);
+        }
         json_error($e->getMessage(), 422);
     }
 
-    $pdo = db();
-    $stmt = $pdo->prepare(
-        "INSERT INTO reports (location, waste_type, amount_kg, detail, latitude, longitude,
-                              location_source, record_origin)
-         VALUES (:location, :waste_type, :amount_kg, :detail, :latitude, :longitude,
-                 :location_source, :record_origin)"
-    );
-    $stmt->execute($clean);
+    try {
+        $pdo = db();
+        $stmt = $pdo->prepare(
+            "INSERT INTO reports (location, waste_type, amount_kg, detail, image_path,
+                                  latitude, longitude, location_source, record_origin)
+             VALUES (:location, :waste_type, :amount_kg, :detail, :image_path,
+                     :latitude, :longitude, :location_source, :record_origin)"
+        );
+        $stmt->execute($clean);
+    } catch (Throwable $e) {
+        if ($saved_photo !== null) {
+            @unlink(__DIR__ . '/../' . $saved_photo);
+        }
+        throw $e;
+    }
     json_response(["id" => (int)$pdo->lastInsertId()] + $clean, 201);
 }
 
@@ -119,5 +156,6 @@ try {
         default => json_error("Method Not Allowed", 405),
     };
 } catch (PDOException $e) {
+    error_log('reports API: ' . $e->getMessage());
     json_error("database error", 500);
 }

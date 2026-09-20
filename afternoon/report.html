@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
     <title>แจ้งจุดขยะ — Bangsaen Waste Vision</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260920-polish2">
+    <link rel="stylesheet" href="css/report-polish.css?v=20260920-polish">
 </head>
 <body>
     <header class="site">
-        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <h1><a class="brand-link" href="index.html"><img class="brand-mark" src="assets/app-icon.svg" width="36" height="36" alt="">Bangsaen Waste Vision</a></h1>
         <nav class="site" aria-label="เมนูหลัก">
             <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
             <a href="report.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
@@ -23,112 +25,128 @@
         </nav>
     </header>
 
-    <main>
+    <main class="main-narrow report-page">
         <section>
             <h1 class="page-title">แจ้งจุดขยะ</h1>
-            <p class="muted">ช่องทางเสริมสำหรับประชาชนและเจ้าหน้าที่ ไม่ใช่แหล่งข้อมูลหลักเพียงอย่างเดียวของระบบ<br>
-                ดูรายการที่แจ้งไว้แล้วได้ที่หน้า <a href="reports.html">รายการแจ้ง</a></p>
+            <p class="lede">บอกแค่ว่าอยู่ตรงไหน ถ้ามีรูปหรืออยากเล่าเพิ่มค่อยใส่</p>
 
-            <!-- หน้าเดียวในระบบที่รับข้อมูลจากคนภายนอก ต้องบอกก่อนกดส่งว่าไม่ใช่ช่องทางจริง -->
-            <p class="replay-banner warning">
-                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                <span>ระบบต้นแบบสำหรับสาธิต — เรื่องที่แจ้งที่นี่<strong>ไม่ได้ส่งถึงเทศบาลบางแสน</strong>
-                    ถ้าเป็นเรื่องเร่งด่วน กรุณาติดต่อหน่วยงานตามช่องทางจริง</span>
-            </p>
+            <!-- หน้าเดียวในระบบที่รับข้อมูลจากคนภายนอก ต้องบอกก่อนกดส่งว่าไม่ใช่ช่องทางจริง
+                 บีบให้สั้นที่สุดเท่าที่ยังไม่ทำให้เข้าใจผิด — ไม่ให้แย่งพื้นที่จากปุ่มหลัก -->
+            <p class="demo-label">เดโม · ยังไม่ส่งถึงเทศบาล</p>
 
             <form class="report-form" id="report-form" novalidate>
                 <div class="msg hidden" id="form-msg" role="alert"></div>
 
-                <!-- Phase B: เลือกสถานที่ได้ 3 ทาง — เลือกพื้นที่ / ใช้ตำแหน่งปัจจุบัน / พิมพ์เอง
-                     ไม่ขอสิทธิ์ GPS ตอนเปิดหน้า ขอเมื่อผู้ใช้กดปุ่มเท่านั้น -->
-                <fieldset class="fieldset-location">
-                    <legend>สถานที่เกิดเหตุ</legend>
+                <!-- สถานที่: GPS และพิมพ์เองใช้ได้ทันที; preset เป็นทางเลือกเสริม
+                     ขอสิทธิ์ GPS เฉพาะเมื่อผู้ใช้กดปุ่ม -->
+                <fieldset class="step">
+                    <legend>สถานที่</legend>
 
-                    <div class="location-row">
-                        <label class="field" for="preset-location">เลือกพื้นที่
-                            <select id="preset-location"></select>
-                        </label>
-                        <button type="button" class="btn-ghost btn-sm" id="gps-btn">
-                            <svg class="icon" aria-hidden="true"><use href="#icon-crosshair"></use></svg>
-                            <span>ใช้ตำแหน่งปัจจุบัน</span>
-                        </button>
-                    </div>
+                    <button type="button" class="btn-primary btn-block" id="gps-btn">
+                        <svg class="icon" aria-hidden="true"><use href="#icon-crosshair"></use></svg>
+                        <span>ใช้ตำแหน่งปัจจุบัน</span>
+                    </button>
 
                     <p class="location-status" id="location-status" hidden>
                         <svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>
-                        <span class="location-status-body">
-                            <span id="location-status-text"></span>
-                            <span class="location-coords" id="location-coords" hidden></span>
-                            <span class="btn-row" id="location-confirm-row" hidden>
-                                <button type="button" class="btn-sm" id="gps-confirm-btn">ใช้ตำแหน่งนี้</button>
-                                <button type="button" class="btn-ghost btn-sm" id="gps-cancel-btn">ไม่ใช้</button>
-                            </span>
-                        </span>
+                        <span id="location-status-text"></span>
                     </p>
 
-                    <span class="location-or">หรือพิมพ์สถานที่เอง</span>
-                    <label for="location">
-                        <span class="visually-hidden">ชื่อสถานที่</span>
-                        <input type="text" name="location" id="location" required minlength="3" maxlength="100"
+                    <label class="field location-entry" for="location">หรือพิมพ์สถานที่
+                        <input type="text" name="location" id="location" minlength="3" maxlength="100"
                                placeholder="เช่น หาดบางแสน หน้าโค้งวงเวียน" autocomplete="off">
-                        <span class="field-hint">แก้ไขข้อความนี้ได้เสมอ ไม่ว่าจะเลือกพื้นที่หรือใช้ตำแหน่งปัจจุบัน</span>
                     </label>
 
-                    <p class="location-summary" id="location-summary">ที่มาของตำแหน่ง: <strong>พิมพ์เอง</strong></p>
+                    <!-- สรุปว่าจะส่งอะไรไป ต้องเห็นได้โดยไม่ต้องเปิด disclosure -->
+                    <div class="chosen-location" id="chosen-location" hidden>
+                        <svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>
+                        <span class="chosen-location-body">
+                            <strong id="chosen-location-name"></strong>
+                            <span class="muted" id="chosen-location-meta"></span>
+                        </span>
+                        <button type="button" class="btn-ghost btn-sm" id="location-clear-btn">เปลี่ยน</button>
+                    </div>
+
+                    <details class="location-manual" id="location-manual">
+                        <summary>เลือกจากสถานที่แนะนำ</summary>
+                        <div class="location-manual-body">
+                            <label class="field" for="preset-location"><span class="visually-hidden">สถานที่แนะนำ</span>
+                                <select id="preset-location"></select>
+                            </label>
+                        </div>
+                    </details>
+
                     <input type="hidden" name="latitude" id="latitude" value="">
                     <input type="hidden" name="longitude" id="longitude" value="">
                     <input type="hidden" name="location_source" id="location_source" value="manual">
+
+                    <!-- เตือนว่าอาจมีคนแจ้งจุดนี้ไว้แล้ว — เป็นข้อมูลประกอบ ไม่บล็อกการส่ง -->
+                    <p class="duplicate-hint" id="duplicate-hint" hidden>
+                        <svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>
+                        <span id="duplicate-hint-text"></span>
+                        <a id="duplicate-hint-link" href="reports.html">ดูรายการเดิม</a>
+                    </p>
                 </fieldset>
 
-                <label for="detail">
-                    รายละเอียด
-                    <textarea name="detail" id="detail" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"></textarea>
-                    <span class="char-counter" id="detail-counter">0 / 500</span>
-                </label>
+                <!-- ขั้นที่ 2 — รูป (ไม่บังคับ)
+                     สองปุ่มเพราะมือถือกับคอมต้องการคนละอย่าง: capture เปิดกล้องตรง ๆ
+                     ส่วนอีกปุ่มเลือกไฟล์ที่มีอยู่แล้ว -->
+                <fieldset class="step">
+                    <legend>เพิ่มรูป <span class="optional-tag">ไม่บังคับ</span></legend>
 
-                <!-- สถานที่มาก่อน แล้วรายละเอียดแบบไม่บังคับ สองช่องนี้อยู่ท้ายสุดเพราะเป็นช่องที่
-                     แบบฟอร์มเดิมบังคับไว้ ยังต้องกรอก แต่ไม่ควรแย่งความสนใจจากสถานที่ -->
-                <fieldset class="fieldset-secondary">
-                    <legend>ข้อมูลประกอบ</legend>
-
-                    <label for="waste_type">
-                        ประเภทขยะ
-                        <select name="waste_type" id="waste_type" required>
-                            <option value="general">ทั่วไป</option>
-                            <option value="recyclable">รีไซเคิล</option>
-                            <option value="hazardous">อันตราย</option>
-                            <option value="organic">อินทรีย์</option>
-                        </select>
-                    </label>
-
-                    <label for="amount_kg">
-                        ปริมาณโดยประมาณ (กก.)
-                        <input type="number" name="amount_kg" id="amount_kg" required min="1" max="1000" step="1">
-                        <span class="field-hint">ประมาณคร่าว ๆ ได้ ระหว่าง 1–1000 กก.</span>
-                    </label>
-                </fieldset>
-
-                <!-- Phase H: เตือนรายการที่อาจซ้ำ ไม่บล็อกการส่ง -->
-                <div class="duplicate-warning" id="duplicate-warning" hidden>
-                    <h3><svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg> บริเวณนี้อาจมีรายการแจ้งอยู่แล้ว</h3>
-                    <p class="muted" id="duplicate-note"></p>
-                    <ul class="duplicate-list" id="duplicate-list"></ul>
-                    <div class="btn-row">
-                        <button type="button" class="btn-sm" id="duplicate-submit-btn">ยืนยันส่งรายการใหม่</button>
-                        <a class="btn btn-ghost btn-sm" id="duplicate-view-link" href="reports.html">ดูรายการเดิม</a>
+                    <div class="photo-actions" id="photo-actions">
+                        <button type="button" class="btn-ghost" id="photo-camera-btn">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
+                            <span>ถ่ายรูป</span>
+                        </button>
+                        <button type="button" class="btn-ghost" id="photo-file-btn">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-image"></use></svg>
+                            <span>เลือกรูป</span>
+                        </button>
                     </div>
-                </div>
+                    <p class="field-hint" id="photo-hint" aria-live="polite">JPG, PNG หรือ WEBP ขนาดไม่เกิน 5 MB</p>
 
-                <button type="submit">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
-                    <span>ส่งเรื่องแจ้ง</span>
+                    <input type="file" id="photo-camera-input" accept="image/*" capture="environment" hidden>
+                    <input type="file" id="photo-file-input" accept="image/jpeg,image/png,image/webp" hidden>
+
+                    <figure class="photo-preview" id="photo-preview" hidden>
+                        <img id="photo-preview-img" alt="รูปที่เลือกไว้">
+                        <figcaption>
+                            <span id="photo-preview-name"></span>
+                            <span class="btn-row">
+                                <button type="button" class="btn-ghost btn-sm" id="photo-replace-btn">เปลี่ยนรูป</button>
+                                <button type="button" class="btn-ghost btn-sm" id="photo-remove-btn">ลบรูป</button>
+                            </span>
+                        </figcaption>
+                    </figure>
+                </fieldset>
+
+                <!-- ขั้นที่ 3 — รายละเอียด (ไม่บังคับ) ช่องเดียว ไม่มีช่องย่อย
+                     ประเภทขยะ/น้ำหนักถูกถอดออกจากฟอร์มของประชาชนแล้ว (SPEC §2.2) -->
+                <fieldset class="step">
+                    <legend>รายละเอียดเพิ่มเติม <span class="optional-tag">ไม่บังคับ</span></legend>
+                    <label class="field" for="detail">
+                        <span class="visually-hidden">รายละเอียดเพิ่มเติม</span>
+                        <textarea name="detail" id="detail" maxlength="500" rows="2"
+                                  placeholder="เช่น กองอยู่ข้างเสาไฟ มีมาหลายวันแล้ว"></textarea>
+                        <span class="char-counter" id="detail-counter">0 / 500</span>
+                    </label>
+                </fieldset>
+
+                <button type="submit" class="btn-primary btn-block btn-lg">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>
+                    <span>แจ้งจุดนี้</span>
                 </button>
             </form>
+
+            <p class="muted form-footnote">
+                ดูเรื่องที่แจ้งไว้แล้วได้ที่หน้า <a href="reports.html">รายการแจ้ง</a>
+            </p>
         </section>
     </main>
 
-    <script src="js/ui.js"></script>
-    <script src="js/locations.js"></script>
-    <script src="js/report.js"></script>
+    <script src="js/ui.js?v=20260920-polish2"></script>
+    <script src="js/locations.js?v=20260920-polish"></script>
+    <script src="js/report.js?v=20260920-polish"></script>
 </body>
 </html>

@@ -1,0 +1,6 @@
+Options -Indexes -ExecCGI
+SetHandler default-handler
+RemoveHandler .php .phtml .phar .cgi .pl
+<FilesMatch "^(?![a-f0-9]{32}\.(jpg|png|webp)$)">
+    Require all denied
+</FilesMatch>

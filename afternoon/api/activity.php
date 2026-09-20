@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
-require __DIR__ . '/../lib/pagination.php';
-require __DIR__ . '/../lib/activity.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/pagination.php';
+require_once __DIR__ . '/../lib/activity.php';
 
 // GET /api/activity.php?days=90&kind=report&q=บางแสน&page=1&per_page=20
 // คืน { activities: [...], days, kind, pagination: { page, per_page, total, total_pages } }

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
-require __DIR__ . '/../lib/pagination.php';
-require __DIR__ . '/../lib/vision_evidence.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/pagination.php';
+require_once __DIR__ . '/../lib/vision_evidence.php';
 
 // Drill-down endpoint: raw observations are evidence/source records.
 // Human review happens at incident level via /api/vision-review.php.

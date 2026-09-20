@@ -15,9 +15,7 @@ const WASTE_TYPE_LABEL = {
     organic: 'อินทรีย์',
 };
 
-const SOURCE_LABEL = { preset: 'พื้นที่ที่กำหนด', gps: 'พิกัด GPS', manual: 'พิมพ์เอง' };
-
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT = 3;
 const SEARCH_DEBOUNCE_MS = 300;
 const DEFAULTS = { q: '', waste_type: '', status: '', record_origin: '', page: 1 };
 
@@ -36,6 +34,9 @@ function applyStateToControls() {
     typeSelect.value = state.waste_type;
     statusSelect.value = state.status;
     originSelect.value = state.record_origin;
+    // ตัวกรองพับไว้เป็นค่าตั้งต้น แต่ถ้ามาจากลิงก์ที่กรองไว้ ต้องกางให้เห็นว่ากรองอะไรอยู่
+    document.getElementById('filter-more').open =
+        state.waste_type !== '' || state.status !== '' || state.record_origin !== '';
 }
 
 async function loadReports() {
@@ -91,23 +92,26 @@ function renderRows(reports) {
 
     tbody.innerHTML = reports.map((r) => {
         const status = STATUS_LABEL[r.status] ?? r.status;
-        const coords = r.latitude !== null && r.longitude !== null
-            ? `${Number(r.latitude).toFixed(5)}, ${Number(r.longitude).toFixed(5)}`
-            : '';
-        const origin = SOURCE_LABEL[r.location_source] ?? r.location_source;
+        const extra = [r.detail, r.waste_type ? (WASTE_TYPE_LABEL[r.waste_type] ?? r.waste_type) : '',
+            r.amount_kg == null ? '' : `${Number(r.amount_kg)} กก.`].filter(Boolean).join(' · ');
         // ป้าย "ตัวอย่าง" ติดกับชื่อจุดเลย เพื่อให้อ่านผ่าน ๆ ก็ไม่เข้าใจผิดว่าเป็นเรื่องจริง
         const demoTag = r.record_origin === 'demo_seed'
             ? '<span class="origin-tag demo_seed">ตัวอย่าง</span>'
             : '';
+        // รูปที่ประชาชนแนบมา — path ถูก validate ฝั่ง server แล้ว (null ถ้าไฟล์หาย)
+        const photo = r.image_path
+            ? `<a class="report-thumb" href="${escapeHtml(r.image_path)}" target="_blank" rel="noopener">
+                   <img src="${escapeHtml(r.image_path)}" alt="รูปที่แนบมากับรายการนี้" loading="lazy">
+               </a>`
+            : '';
         return `
             <tr>
                 <td class="cell-lead">
-                    <span class="cell-primary">${escapeHtml(r.location)}${demoTag}</span>
-                    <span class="cell-secondary">${escapeHtml(coords ? `${origin} · ${coords}` : origin)}</span>
+                    <div class="report-item">${photo}<div>
+                        <span class="cell-primary">${escapeHtml(r.location)}${demoTag}</span>
+                        ${extra ? `<span class="cell-secondary">${escapeHtml(extra)}</span>` : ''}
+                    </div></div>
                 </td>
-                <td data-label="ประเภท">${escapeHtml(WASTE_TYPE_LABEL[r.waste_type] ?? r.waste_type)}</td>
-                <td class="num" data-label="ปริมาณ (กก.)">${Number(r.amount_kg)}</td>
-                <td data-label="รายละเอียด">${escapeHtml(r.detail || '—')}</td>
                 <td data-label="สถานะ"><span class="status-badge ${escapeHtml(r.status)}">${escapeHtml(status)}</span></td>
                 <td data-label="เวลาแจ้ง">${escapeHtml(formatDateTime(r.created_at))}</td>
             </tr>`;

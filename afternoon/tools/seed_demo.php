@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . "/../lib/cli_only.php";
+require_once __DIR__ . "/../lib/cli_only.php";
 
 /**
  * seed_demo.php — ใส่ "ข้อมูลตัวอย่างสำหรับเดโม" ผ่าน API จริง

@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/../lib/db.php';
-require __DIR__ . '/../lib/response.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/response.php';
 
 // เหมือน morning/waste_logic.py::proper_disposal_rate แต่ใช้กับตัวเลขจาก DB โดยตรง
 // รับ null ได้ เพราะ schema ยอมให้คอลัมน์ tpd เป็น NULL (ข้อมูลเปิดบางแถวไม่ครบ)

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . "/../lib/cli_only.php";
+require_once __DIR__ . "/../lib/cli_only.php";
 
-require __DIR__ . "/../lib/validate.php";
-require __DIR__ . "/../lib/pagination.php";
-require __DIR__ . "/../lib/vision_evidence.php";
-require __DIR__ . "/../lib/live_detection.php";
+require_once __DIR__ . "/../lib/validate.php";
+require_once __DIR__ . "/../lib/pagination.php";
+require_once __DIR__ . "/../lib/vision_evidence.php";
+require_once __DIR__ . "/../lib/live_detection.php";
 
 $passed = 0;
 $failed = 0;
@@ -44,7 +44,7 @@ check("clean output", function () use ($good) {
     $r = validate_report($good);
     // === เทียบทั้ง key และลำดับ — ถ้าเพิ่ม/ย้ายฟิลด์ใน validate_report() ต้องอัปเดตที่นี่ด้วย
     assert($r === ["location" => "หาดบางแสน หน้าโค้งวงเวียน", "waste_type" => "general",
-                   "amount_kg" => 20, "detail" => "",
+                   "amount_kg" => 20, "detail" => "", "image_path" => null,
                    "latitude" => null, "longitude" => null,
                    "location_source" => "manual",
                    "record_origin" => "citizen"], "output mismatch");
@@ -63,10 +63,13 @@ check("thai length uses mb_strlen", function () use ($good) {
 foreach (["", "  ", "ab", "กข", str_repeat("x", 101)] as $v) {
     check("bad location '$v'", fn() => expect_error("location", [...$good, "location" => $v]));
 }
-foreach (["plastic", "", null, "General", true] as $v) {
-    check("bad waste_type", fn() => expect_error("waste_type", [...$good, "waste_type" => $v]));
+// "" และ null = ไม่ได้กรอก (ถูกต้อง) — ดูบล็อก SPEC §2.2 ด้านล่าง
+// ส่วนค่าที่ "กรอกมาแต่ผิด" ยังต้องถูกปฏิเสธเหมือนเดิม
+foreach (["plastic", "General", true] as $v) {
+    check("bad waste_type " . var_export($v, true),
+        fn() => expect_error("waste_type", [...$good, "waste_type" => $v]));
 }
-foreach ([0, 1001, -5, "20.5", "abc", true, 20.5, null] as $v) {
+foreach ([0, 1001, -5, "20.5", "abc", true, 20.5] as $v) {
     check("bad amount_kg " . var_export($v, true),
         fn() => expect_error("amount_kg", [...$good, "amount_kg" => $v]));
 }
@@ -127,6 +130,123 @@ check("missing/empty location_source defaults to manual", function () use ($good
     assert(validate_report($good)["location_source"] === "manual");
     assert(validate_report([...$good, "location_source" => ""])["location_source"] === "manual");
     assert(validate_report([...$good, "location_source" => null])["location_source"] === "manual");
+});
+
+// ---------- SPEC §2.2: หน้าแจ้งของประชาชนขอแค่ "สถานที่" ----------
+// เหตุผลที่ต้องมีชุดนี้: ทางแก้ที่ผิดคือให้ frontend ส่งค่าปลอม (เช่น general / 1 กก.)
+// เพื่อให้ validation เดิมผ่าน ซึ่งจะได้ข้อมูลที่ดูเหมือนคนกรอกแต่ไม่มีใครกรอก
+// test พวกนี้ล็อกไว้ว่า "ไม่กรอก" ต้องออกมาเป็น NULL จริง ๆ
+
+check("location อย่างเดียวก็ส่งได้", function () {
+    $r = validate_report(["location" => "หาดบางแสน หน้าโค้งวงเวียน"]);
+    assert($r["waste_type"] === null, "waste_type ต้องเป็น null ไม่ใช่ค่าที่เดาให้");
+    assert($r["amount_kg"] === null, "amount_kg ต้องเป็น null ไม่ใช่ 0 หรือ 1");
+    assert($r["detail"] === "", "detail ที่ไม่กรอกคือ string ว่าง");
+    assert($r["image_path"] === null, "ไม่แนบรูป = null");
+    assert($r["location_source"] === "manual");
+    assert($r["record_origin"] === "citizen");
+});
+
+foreach ([null, ""] as $v) {
+    check("waste_type " . var_export($v, true) . " = ไม่กรอก -> null", function () use ($v) {
+        $r = validate_report(["location" => "หาดบางแสน", "waste_type" => $v]);
+        assert($r["waste_type"] === null, "ต้องเป็น null");
+    });
+    check("amount_kg " . var_export($v, true) . " = ไม่กรอก -> null", function () use ($v) {
+        $r = validate_report(["location" => "หาดบางแสน", "amount_kg" => $v]);
+        assert($r["amount_kg"] === null, "ต้องเป็น null ไม่ใช่ 0");
+    });
+}
+
+check("กรอกมาก็ยังเก็บค่าเดิมได้ (แถวเก่า/เจ้าหน้าที่เติมทีหลัง)", function () {
+    $r = validate_report(["location" => "หาดบางแสน", "waste_type" => "hazardous", "amount_kg" => "35"]);
+    assert($r["waste_type"] === "hazardous");
+    assert($r["amount_kg"] === 35, "string ตัวเลขต้องกลายเป็น int");
+});
+
+check("location ยังบังคับอยู่", function () {
+    expect_error("location", ["waste_type" => "general", "amount_kg" => 10]);
+});
+
+// ---------- รูปที่ประชาชนแนบ: path ที่เก็บลง DB ----------
+// ชื่อไฟล์จริงระบบเป็นคนสุ่ม ค่าที่ client ส่งเองต้องไม่พาให้ DB ชี้ออกนอกโฟลเดอร์
+
+check("image_path ที่ไม่มีไฟล์จริงกลายเป็น null", function () {
+    $r = validate_report(["location" => "หาดบางแสน",
+                          "image_path" => "uploads/reports/ไม่มีไฟล์นี้.jpg"]);
+    assert($r["image_path"] === null, "ไฟล์ไม่มีอยู่ต้องเป็น null");
+});
+
+foreach ([
+    "uploads/reports/../../lib/db.php",
+    "../lib/db.php",
+    "/etc/passwd",
+    "http://evil.example/x.jpg",
+    "//evil.example/x.jpg",
+    "data:image/png;base64,AAAA",
+    "uploads/reports/x.jpg.php",
+    "uploads/reports/sub/x.jpg",
+    "uploads\reports\x.jpg",
+    "assets/vision/sample-road.jpg",
+] as $bad) {
+    check("image_path อันตรายถูกปัดเป็น null: $bad", function () use ($bad) {
+        $r = validate_report(["location" => "หาดบางแสน", "image_path" => $bad]);
+        assert($r["image_path"] === null, "ต้องไม่ผ่าน: $bad");
+    });
+}
+
+check("image_path ที่ชี้ไฟล์จริงใน uploads/reports ผ่าน", function () {
+    // สร้างไฟล์ PNG จริงชั่วคราวแล้วลบทิ้ง — ไม่แตะไฟล์ของผู้ใช้
+    $root = report_photo_root();
+    if (!is_dir($root)) {
+        mkdir($root, 0775, true);
+    }
+    $name = "unittest-" . bin2hex(random_bytes(6)) . ".png";
+    $png = base64_decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    );
+    file_put_contents("$root/$name", $png);
+    try {
+        $r = validate_report(["location" => "หาดบางแสน", "image_path" => "uploads/reports/$name"]);
+        assert($r["image_path"] === "uploads/reports/$name", "ควรผ่านแต่ได้: " . var_export($r["image_path"], true));
+    } finally {
+        @unlink("$root/$name");
+    }
+});
+
+// ---------- save_report_photo(): ฝั่งรับไฟล์ ----------
+// is_uploaded_file() เป็นจริงเฉพาะใน request จริง จึงทดสอบได้เฉพาะสาขาที่ไม่ต้องมีไฟล์อัปโหลด
+// (เส้นทางอัปโหลดจริง end-to-end อยู่ใน tests/list_api_test.php ที่ยิงผ่าน Apache)
+
+check("ไม่แนบรูป = null ไม่ใช่ error", function () {
+    assert(save_report_photo(null) === null);
+    assert(save_report_photo(["error" => UPLOAD_ERR_NO_FILE]) === null);
+});
+
+check("ไฟล์ใหญ่เกิน ini ตอบข้อความที่คนอ่านรู้เรื่อง", function () {
+    try {
+        save_report_photo(["error" => UPLOAD_ERR_INI_SIZE]);
+    } catch (InvalidArgumentException $e) {
+        assert(str_starts_with($e->getMessage(), "photo:"), "prefix ผิด: " . $e->getMessage());
+        return;
+    }
+    throw new Exception("ควร throw");
+});
+
+check("tmp_name ที่ไม่ได้มาจาก HTTP upload ถูกปฏิเสธ", function () {
+    // กันการชี้ไปไฟล์อื่นในเครื่องแทนไฟล์ที่อัปโหลดมาจริง
+    try {
+        save_report_photo([
+            "error" => UPLOAD_ERR_OK,
+            "tmp_name" => __FILE__,
+            "size" => 100,
+            "name" => "x.jpg",
+        ]);
+    } catch (InvalidArgumentException $e) {
+        assert(str_contains($e->getMessage(), "ไม่ถูกต้อง"), $e->getMessage());
+        return;
+    }
+    throw new Exception("ควร throw — is_uploaded_file ต้องกันไว้");
 });
 
 // ---------- record_origin ของ reports: ข้อมูลจริงจากคน vs ข้อมูลตัวอย่างสำหรับเดโม ----------
@@ -408,7 +528,7 @@ check("invalid live detector json fails closed", function () {
 // ---------- ประวัติกิจกรรม 90 วัน (derived activity timeline) ----------
 // ไม่มีตาราง log แยก — ไทม์ไลน์นี้อ่านจาก reports + vision_incidents ที่มีอยู่แล้ว
 
-require __DIR__ . "/../lib/activity.php";
+require_once __DIR__ . "/../lib/activity.php";
 
 function expect_activity_error(string $field, callable $fn): void
 {
@@ -482,7 +602,7 @@ check("every activity branch is bounded by the day window", function () {
 // --- การตั้งค่าฐานข้อมูล: env ของ deployment ต้องมาก่อน ค่า local ต้องยังใช้ได้ ---
 
 // ทดสอบเฉพาะการอ่านค่า ไม่ได้ต่อฐานข้อมูลจริง
-require __DIR__ . "/../lib/db.php";
+require_once __DIR__ . "/../lib/db.php";
 
 function with_db_env(array $env, callable $fn): void
 {

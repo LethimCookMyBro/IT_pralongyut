@@ -40,3 +40,12 @@ references/test_videos/*.mov
 references/test_videos/*.avi
 references/test_videos/*.mkv
 references/test_videos/*.webm
+
+# รูปที่ประชาชนอัปโหลดผ่านหน้าแจ้งจุดขยะ — เป็น user content ไม่ commit
+# (โฟลเดอร์ยังถูกเก็บไว้ด้วย .gitkeep เพื่อให้ deploy แล้วมีที่เขียน)
+afternoon/uploads/reports/*
+!afternoon/uploads/reports/.gitkeep
+!afternoon/uploads/reports/.htaccess
+
+# วิดีโอ demo ที่ render จาก inference จริง — ใหญ่และ derive ได้จาก local_vision/render_demo_videos.py
+afternoon/runtime/demo-videos/
