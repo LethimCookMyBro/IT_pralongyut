@@ -19,6 +19,7 @@
             <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
             <a href="detect.html"><svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>ตรวจจับ AI</a>
             <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+            <a href="activity.html"><svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>ประวัติ</a>
         </nav>
     </header>
 
@@ -27,6 +28,13 @@
             <h1 class="page-title">แจ้งจุดขยะ</h1>
             <p class="muted">ช่องทางเสริมสำหรับประชาชนและเจ้าหน้าที่ ไม่ใช่แหล่งข้อมูลหลักเพียงอย่างเดียวของระบบ<br>
                 ดูรายการที่แจ้งไว้แล้วได้ที่หน้า <a href="reports.html">รายการแจ้ง</a></p>
+
+            <!-- หน้าเดียวในระบบที่รับข้อมูลจากคนภายนอก ต้องบอกก่อนกดส่งว่าไม่ใช่ช่องทางจริง -->
+            <p class="replay-banner warning">
+                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                <span>ระบบต้นแบบสำหรับสาธิต — เรื่องที่แจ้งที่นี่<strong>ไม่ได้ส่งถึงเทศบาลบางแสน</strong>
+                    ถ้าเป็นเรื่องเร่งด่วน กรุณาติดต่อหน่วยงานตามช่องทางจริง</span>
+            </p>
 
             <form class="report-form" id="report-form" novalidate>
                 <div class="msg hidden" id="form-msg" role="alert"></div>

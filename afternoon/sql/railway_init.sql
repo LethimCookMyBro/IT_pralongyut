@@ -7,7 +7,7 @@
 --
 -- ห้ามรัน schema.sql บน production
 --
--- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001 และ 002)
+-- โครงสร้างตารางตรงกับ schema.sql ที่ migrate แล้ว (รวมคอลัมน์จาก migrations/001, 002, 003, 004)
 -- ฐานข้อมูลใหม่จึงไม่ต้องรัน migrations แยกอีก
 -- ถ้าแก้ schema.sql ต้องแก้ไฟล์นี้ให้ตรงกันด้วย
 --
@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS waste_stats (
 
 -- ตารางเดิม: จุดแจ้งขยะจากประชาชน/เจ้าหน้าที่
 -- latitude/longitude/location_source เพิ่มใน migrations/001_reports_location.sql
+-- record_origin เพิ่มใน migrations/004_reports_record_origin.sql
 -- ที่นี่ใส่ไว้ให้ fresh install ได้โครงเดียวกันกับฐานที่ migrate แล้ว
 CREATE TABLE IF NOT EXISTS reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -37,6 +38,8 @@ CREATE TABLE IF NOT EXISTS reports (
     latitude DECIMAL(10,7) NULL,
     longitude DECIMAL(10,7) NULL,
     location_source ENUM('preset','gps','manual') NOT NULL DEFAULT 'manual',
+    -- citizen = คนแจ้งจริง, demo_seed = ข้อมูลตัวอย่างจาก tools/seed_demo.php
+    record_origin ENUM('citizen','demo_seed') NOT NULL DEFAULT 'citizen',
     waste_type VARCHAR(20) NOT NULL,
     amount_kg INT NOT NULL,
     detail VARCHAR(500) NOT NULL DEFAULT '',

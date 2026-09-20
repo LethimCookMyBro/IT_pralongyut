@@ -19,14 +19,23 @@
             <a href="reports.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
             <a href="detect.html"><svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>ตรวจจับ AI</a>
             <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+            <a href="activity.html"><svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>ประวัติ</a>
         </nav>
     </header>
 
     <main>
         <section>
             <h1 class="page-title">รายการแจ้งจุดขยะ</h1>
-            <p class="muted">รายการที่ประชาชนและเจ้าหน้าที่แจ้งเข้ามา เรียงจากใหม่ไปเก่า —
+            <p class="muted">รายการที่แจ้งเข้ามาผ่านหน้าเว็บนี้ เรียงจากใหม่ไปเก่า —
                 ต้องการแจ้งเพิ่มไปที่หน้า <a href="report.html">แจ้งจุดขยะ</a></p>
+
+            <p class="replay-banner">
+                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                <span>ระบบต้นแบบ — ไม่ใช่ช่องทางรับเรื่องจริงของเทศบาล
+                    แถวที่ติดป้าย <span class="origin-tag demo_seed">ตัวอย่าง</span>
+                    เป็นข้อมูลสมมติที่ใส่ไว้ให้เห็นการทำงานของตัวกรองและการแบ่งหน้า
+                    <span class="term-en">(demo data, removable)</span></span>
+            </p>
 
             <form class="filter-bar" id="filter-bar" role="search">
                 <label class="field field-search" for="filter-q">ค้นหาสถานที่
@@ -47,6 +56,13 @@
                         <option value="PENDING">รอดำเนินการ</option>
                         <option value="NEEDS_CHECK">ควรตรวจสอบ</option>
                         <option value="RESOLVED">ดำเนินการแล้ว</option>
+                    </select>
+                </label>
+                <label class="field" for="filter-origin">ที่มาของข้อมูล
+                    <select id="filter-origin" name="record_origin">
+                        <option value="">ทั้งหมด</option>
+                        <option value="citizen">แจ้งผ่านหน้าเว็บ</option>
+                        <option value="demo_seed">ข้อมูลตัวอย่าง</option>
                     </select>
                 </label>
                 <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>

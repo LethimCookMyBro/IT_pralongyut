@@ -34,6 +34,34 @@
   แล้วส่งผลจริงพร้อม `image_path` เข้า API
 - ห้ามผูกไฟล์นี้กับเหตุที่มีอยู่ด้วยมือ — จะกลายเป็นหลักฐานที่ไม่ตรงกับการตรวจจริง
 
+## sample-road.jpg / sample-city.jpg / sample-water.jpg
+
+ภาพ "ตัวอย่างผลลัพธ์" ที่หน้า `detect.html` แสดงตอน worker ยังไม่ทำงาน
+เพื่อให้เห็นว่าโมเดลให้ผลหน้าตาอย่างไร โดยไม่ต้องรอให้ใครรัน worker ก่อน
+
+ทั้งสามไฟล์คือ **เฟรมจริงจาก `local_vision/worker.py`** (annotated frame ที่ worker
+เขียนลง `runtime/vision/latest.jpg`) รันเมื่อ 2026-09-20 ด้วยคำสั่ง
+
+```
+C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source <road|city|water> --max-inferences 4 --no-post --no-loop
+```
+
+`--no-post` จึงไม่มีแถวใดถูกเขียนลงฐานข้อมูลจากการรันครั้งนี้ ภาพถูกย่อเป็น 1400x788
+เพื่อใช้บนเว็บ ผลการตรวจ (กล่อง/ป้าย) ไม่ถูกแก้ไข ตัวเลขด้านล่างอ่านจาก
+`runtime/vision/latest.json` ของเฟรมเดียวกัน
+
+| ไฟล์ | source | โมเดล | เฟรม | ตรวจพบ | ความมั่นใจสูงสุด | คลาส |
+|---|---|---|---|---|---|---|
+| sample-road.jpg | road (`Video/vid0012.mp4`) | pLitterStreet | 60 | 1 | 0.5162 | Plastic 1 |
+| sample-city.jpg | city (`Video/vid0269.mp4`) | pLitterStreet | 24 | 2 | 0.7609 | Plastic 2 |
+| sample-water.jpg | water (`references/test_videos/water-9736659.mp4`) | pLitterFloat | 24 | 8 | 0.5268 | debris 7, styrofoam 1 |
+
+- ชื่อไฟล์ตั้งใจไม่ใช้รูปแบบ `live-<source>-*.jpg` เพราะ worker จะลบไฟล์รูปแบบนั้น
+  ตาม `--evidence-limit` — ไฟล์ตัวอย่างสามไฟล์นี้ต้องอยู่ถาวร
+- **ไม่ผูกกับ observation ใด** เป็นภาพประกอบหน้า detect เท่านั้น
+  (หลักฐานของเหตุจริงมาจาก `live-*.jpg` ที่ worker POST เข้า API พร้อม `image_path`)
+- วิดีโอต้นทางเป็นวิดีโออ้างอิง/ทดสอบ **ไม่ใช่ภาพจากบางแสน และไม่ใช่กล้องของเทศบาล**
+
 ## กติกา
 
 - เพิ่มไฟล์ที่นี่ได้เฉพาะผลลัพธ์จากการรันโมเดลจริง และต้องบันทึกที่มาไว้ในไฟล์นี้

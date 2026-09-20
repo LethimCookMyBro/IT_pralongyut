@@ -19,24 +19,24 @@
             <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
             <a href="detect.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>ตรวจจับ AI</a>
             <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+            <a href="activity.html"><svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>ประวัติ</a>
         </nav>
     </header>
 
     <main>
         <section>
-            <div class="replay-banner">
-                <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                <span><strong>REPLAY MODE</strong> — วิดีโอหน้านี้เป็นวิดีโออ้างอิงสำหรับทดสอบ Local AI ไม่ใช่ CCTV เทศบาลและไม่ใช่เหตุจริงจากบางแสน</span>
-            </div>
             <div class="replay-banner warning">
-                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
-                <span><strong>PROTOTYPE / UNCALIBRATED</strong> — AI ทำหน้าที่คัดกรองเท่านั้น ผลตรวจต้องผ่าน Incident Queue และเจ้าหน้าที่เป็นผู้ยืนยัน</span>
+                <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
+                <span>AI รันบน<strong>เครื่อง local เท่านั้น</strong> กับ<strong>วิดีโออ้างอิง</strong> —
+                    ไม่ใช่กล้อง/CCTV ของเทศบาลบางแสน ไม่ใช่เหตุจริง และไม่ได้รันบน Railway
+                    AI ทำหน้าที่คัดกรอง คนเป็นผู้ยืนยันในศูนย์ตรวจสอบ</span>
             </div>
 
             <div class="section-head detect-title-row">
                 <div>
                     <h1 class="page-title">ตรวจจับด้วย Local AI</h1>
-                    <p class="muted">Python worker รัน pLitter บนเครื่อง local แล้วส่งเฟรมล่าสุดและผลตรวจมายังหน้านี้</p>
+                    <p class="muted">เลือกวิดีโอด้านล่างเพื่อดูว่าโมเดลตรวจจับขยะได้อย่างไร
+                        ถ้ามี worker ทำงานอยู่ หน้านี้จะแสดงเฟรมสด</p>
                 </div>
                 <div class="detector-status" id="detector-status" data-state="loading" role="status" aria-live="polite">
                     <span class="detector-status-dot" aria-hidden="true"></span>
@@ -45,65 +45,93 @@
             </div>
         </section>
 
+        <section>
+            <!-- ตัวเลือกวิดีโอเป็นการ์ดกดได้ ไม่ใช่ dropdown: เห็นทั้งสามตัวเลือกพร้อมกัน
+                 และกดแล้วเห็นผลทันทีในภาพด้านล่าง (dropdown ต้องกดสองครั้งจึงเห็นอะไร) -->
+            <h2 id="source-picker-label">เลือกวิดีโอที่ให้ AI ดู</h2>
+            <div class="source-cards" role="radiogroup" aria-labelledby="source-picker-label" id="source-picker">
+                <button type="button" class="source-card" role="radio" aria-checked="true" data-source="road">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>บนบก</span>
+                    <h3>ขยะริมถนน</h3>
+                    <p class="muted">โมเดล pLitterStreet · <code>vid0012.mp4</code></p>
+                </button>
+                <button type="button" class="source-card" role="radio" aria-checked="false" data-source="city">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>บนบก</span>
+                    <h3>ขยะในเมือง / พื้นที่สาธารณะ</h3>
+                    <p class="muted">โมเดล pLitterStreet · <code>vid0269.mp4</code></p>
+                </button>
+                <button type="button" class="source-card" role="radio" aria-checked="false" data-source="water">
+                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-water"></use></svg>ทางน้ำ</span>
+                    <h3>ขยะในน้ำ</h3>
+                    <p class="muted">โมเดล pLitterFloat · <code>water-9736659.mp4</code></p>
+                </button>
+            </div>
+        </section>
+
         <section class="detect-grid">
             <div class="detect-viewer">
                 <div class="detect-frame-wrap" id="detect-frame-wrap">
-                    <img id="live-frame" alt="เฟรมล่าสุดจาก Local AI พร้อมกรอบตรวจจับ" hidden>
-                    <div class="detect-frame-empty" id="detect-frame-empty">
+                    <!-- ภาพนี้เป็นได้สองอย่าง: เฟรมสดจาก worker หรือภาพตัวอย่างผลลัพธ์
+                         ป้ายมุมภาพบอกเสมอว่ากำลังดูอันไหน เพื่อไม่ให้เข้าใจผิดว่าเป็นของสด -->
+                    <img id="live-frame" alt="ผลการตรวจจับพร้อมกรอบที่โมเดลวาด">
+                    <span class="frame-badge" id="frame-badge">ตัวอย่างผลลัพธ์</span>
+                    <div class="detect-frame-empty" id="detect-frame-empty" hidden>
                         <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
-                        <strong>ยังไม่มีเฟรมจาก detector</strong>
-                        <span>บน Railway จะเป็นสถานะปกติ เพราะตัว AI รันเฉพาะเครื่อง local</span>
+                        <strong>ยังไม่มีภาพ</strong>
                     </div>
                 </div>
-                <p class="detect-caption" id="detect-caption">รอสถานะจาก worker…</p>
+                <p class="detect-caption" id="detect-caption">กำลังตรวจสถานะ…</p>
             </div>
 
-            <aside class="detect-panel" aria-label="ข้อมูลการตรวจจับล่าสุด">
-                <h2>ผลล่าสุด</h2>
+            <aside class="detect-panel" aria-label="ข้อมูลการตรวจจับ">
+                <h2 id="panel-title">ผลการตรวจ</h2>
                 <dl class="summary-list">
                     <div class="summary-row"><dt>แหล่งวิดีโอ</dt><dd id="live-source">—</dd></div>
-                    <div class="summary-row"><dt>โมเดล</dt><dd id="live-model">—</dd></div>
                     <div class="summary-row"><dt>ตรวจพบ</dt><dd><span id="live-count">—</span> ชิ้น</dd></div>
                     <div class="summary-row"><dt>ความมั่นใจสูงสุด</dt><dd id="live-confidence">—</dd></div>
-                    <div class="summary-row"><dt>เวลา inference</dt><dd id="live-inference">—</dd></div>
                     <div class="summary-row"><dt>อัปเดตล่าสุด</dt><dd id="live-age">—</dd></div>
                 </dl>
 
-                <div class="detect-classes">
-                    <h3>ประเภทที่โมเดลรายงาน</h3>
-                    <ul id="live-classes"><li class="muted">—</li></ul>
-                </div>
-
                 <div class="detect-post-state">
-                    <h3>ส่งเข้า Incident Pipeline</h3>
+                    <h3>ขั้นต่อไปของผลตรวจ</h3>
                     <p class="muted" id="live-post-state">—</p>
                     <a class="btn" href="vision.html">เปิดศูนย์ตรวจสอบ</a>
                 </div>
+
+                <!-- ข้อมูลเชิงเทคนิคพับไว้ ผู้ดูครั้งแรกไม่ต้องอ่านก็เข้าใจหน้านี้ได้ -->
+                <details class="tech-details">
+                    <summary>ข้อมูลเชิงเทคนิค</summary>
+                    <dl class="summary-list">
+                        <div class="summary-row"><dt>โมเดล</dt><dd id="live-model">—</dd></div>
+                        <div class="summary-row"><dt>เวลา inference</dt><dd id="live-inference">—</dd></div>
+                    </dl>
+                    <div class="detect-classes">
+                        <h3>ประเภทที่โมเดลรายงาน</h3>
+                        <ul id="live-classes"><li class="muted">—</li></ul>
+                    </div>
+                    <p class="muted">
+                        ความมั่นใจ (confidence) คือค่าที่โมเดลรายงานต่อเฟรม ไม่ใช่ความแม่นยำของระบบ
+                        และยังไม่ได้ปรับเทียบกับพื้นที่บางแสน
+                        <span class="term-en">(PROTOTYPE / UNCALIBRATED)</span>
+                    </p>
+                </details>
             </aside>
         </section>
 
         <section>
-            <h2>ชุดวิดีโอสำหรับ Demo</h2>
-            <div class="source-cards">
-                <article class="source-card">
-                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>LAND</span>
-                    <h3>ขยะริมถนน</h3>
-                    <p><code>vid0012.mp4</code> · pLitterStreet</p>
-                    <p class="muted">คัดด้วย real inference 7/7 sampled frames มี detection</p>
-                </article>
-                <article class="source-card">
-                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-land"></use></svg>LAND</span>
-                    <h3>ขยะในเมือง / พื้นที่สาธารณะ</h3>
-                    <p><code>vid0269.mp4</code> · pLitterStreet</p>
-                    <p class="muted">คัดด้วย real inference 7/7 sampled frames มี detection</p>
-                </article>
-                <article class="source-card">
-                    <span class="area-tag"><svg class="icon" aria-hidden="true"><use href="#icon-water"></use></svg>WATER</span>
-                    <h3>ขยะในน้ำ</h3>
-                    <p>Pexels G 9736659 · pLitterFloat</p>
-                    <p class="muted">รันจริงแล้ว: 7 → 5 → 7 detections ใน 3 เฟรมแรกของ worker</p>
-                </article>
-            </div>
+            <details class="tech-details" id="worker-howto">
+                <summary>อยากเห็นเฟรมสด ต้องรัน worker บนเครื่องตัวเอง</summary>
+                <p class="muted">
+                    ตัวโมเดลไม่ได้อยู่บนเว็บเซิร์ฟเวอร์ — Railway รันเฉพาะส่วน PHP/MySQL
+                    ส่วน AI เป็น Python worker ที่รันบนเครื่อง local แล้วเขียนเฟรมล่าสุดกับผลตรวจ
+                    ลงไฟล์ให้หน้านี้อ่าน ถ้าไม่ได้รัน worker หน้านี้จะแสดง “ตัวอย่างผลลัพธ์” แทน
+                </p>
+                <pre><code>C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road</code></pre>
+                <p class="muted">
+                    worker จะ POST ผลตรวจเข้า <code>api/vision.php</code> เป็น
+                    <span class="term-en">replay + detector_run</span> แล้วไปรวมเป็นเหตุให้คนตรวจในศูนย์ตรวจสอบ
+                </p>
+            </details>
         </section>
 
         <section class="webcam-section">

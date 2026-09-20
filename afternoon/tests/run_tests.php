@@ -46,7 +46,8 @@ check("clean output", function () use ($good) {
     assert($r === ["location" => "หาดบางแสน หน้าโค้งวงเวียน", "waste_type" => "general",
                    "amount_kg" => 20, "detail" => "",
                    "latitude" => null, "longitude" => null,
-                   "location_source" => "manual"], "output mismatch");
+                   "location_source" => "manual",
+                   "record_origin" => "citizen"], "output mismatch");
 });
 
 check("amount boundaries", function () use ($good) {
@@ -127,6 +128,24 @@ check("missing/empty location_source defaults to manual", function () use ($good
     assert(validate_report([...$good, "location_source" => ""])["location_source"] === "manual");
     assert(validate_report([...$good, "location_source" => null])["location_source"] === "manual");
 });
+
+// ---------- record_origin ของ reports: ข้อมูลจริงจากคน vs ข้อมูลตัวอย่างสำหรับเดโม ----------
+// ต้องแยกให้ได้ในระดับข้อมูล ไม่ใช่แค่ข้อความบนหน้าเว็บ กรรมการต้องไม่อ่าน seed เป็นเรื่องจริง
+
+check("report record_origin defaults to citizen", function () use ($good) {
+    assert(validate_report($good)["record_origin"] === "citizen");
+    assert(validate_report([...$good, "record_origin" => ""])["record_origin"] === "citizen");
+    assert(validate_report([...$good, "record_origin" => null])["record_origin"] === "citizen");
+});
+
+check("report record_origin demo_seed is kept", function () use ($good) {
+    assert(validate_report([...$good, "record_origin" => "demo_seed"])["record_origin"] === "demo_seed");
+});
+
+foreach (["DEMO_SEED", "seed", "detector_run", "demo", 1, true, []] as $v) {
+    check("bad report record_origin " . var_export($v, true),
+        fn() => expect_error("record_origin", [...$good, "record_origin" => $v]));
+}
 
 // ---------- PHASE A: pagination contract ----------
 
@@ -384,6 +403,80 @@ check("invalid live detector json fails closed", function () {
     } finally {
         remove_live_test_runtime($dir);
     }
+});
+
+// ---------- ประวัติกิจกรรม 90 วัน (derived activity timeline) ----------
+// ไม่มีตาราง log แยก — ไทม์ไลน์นี้อ่านจาก reports + vision_incidents ที่มีอยู่แล้ว
+
+require __DIR__ . "/../lib/activity.php";
+
+function expect_activity_error(string $field, callable $fn): void
+{
+    try {
+        $fn();
+    } catch (InvalidArgumentException $e) {
+        if (!str_starts_with($e->getMessage(), $field)) {
+            throw new Exception("error should start with '$field' got: " . $e->getMessage());
+        }
+        return;
+    }
+    throw new Exception("expected InvalidArgumentException for $field");
+}
+
+check("activity days defaults to 90", function () {
+    assert(activity_days(null) === 90);
+    assert(activity_days("") === 90);
+});
+
+check("activity days accepts 1..90", function () {
+    assert(activity_days("1") === 1);
+    assert(activity_days("7") === 7);
+    assert(activity_days(30) === 30);
+    assert(activity_days("90") === 90);
+});
+
+foreach (["0", "91", "365", "abc", "1.5", " 7", "-1", true] as $v) {
+    check("bad activity days " . var_export($v, true),
+        fn() => expect_activity_error("days", fn() => activity_days($v)));
+}
+
+check("activity kind null/empty/all means every kind", function () {
+    assert(activity_kind(null) === null);
+    assert(activity_kind("") === null);
+    assert(activity_kind("all") === null);
+});
+
+check("activity kind keeps a known kind", function () {
+    foreach (ACTIVITY_KINDS as $kind) {
+        assert(activity_kind($kind) === $kind);
+    }
+});
+
+foreach (["REPORT", "observation", "detector", 5, true] as $v) {
+    check("bad activity kind " . var_export($v, true),
+        fn() => expect_activity_error("kind", fn() => activity_kind($v)));
+}
+
+check("activity sql covers every kind when unfiltered", function () {
+    $sql = activity_sql(null, 90);
+    foreach (ACTIVITY_KINDS as $kind) {
+        assert(str_contains($sql, "'$kind' AS kind"), "missing kind $kind");
+    }
+});
+
+check("activity sql with a kind filter excludes the other kinds", function () {
+    $sql = activity_sql("review", 90);
+    assert(str_contains($sql, "'review' AS kind"), "review branch missing");
+    foreach (["report", "detect", "resolve"] as $kind) {
+        assert(!str_contains($sql, "'$kind' AS kind"), "kind $kind should be filtered out");
+    }
+    assert(!str_contains($sql, "UNION"), "single kind should not need UNION");
+});
+
+check("every activity branch is bounded by the day window", function () {
+    $sql = activity_sql(null, 7);
+    // หนึ่ง window ต่อหนึ่ง branch — ห้ามมี branch ไหนดึงทั้งตาราง
+    assert(substr_count($sql, "INTERVAL 7 DAY") === count(ACTIVITY_KINDS), "window count mismatch: $sql");
 });
 
 // --- การตั้งค่าฐานข้อมูล: env ของ deployment ต้องมาก่อน ค่า local ต้องยังใช้ได้ ---

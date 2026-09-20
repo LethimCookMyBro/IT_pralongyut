@@ -87,6 +87,9 @@ foreach ($reports as [$location, $type, $kg, $detail, $source, $lat, $lng]) {
         'location_source' => $source,
         'latitude' => $lat,
         'longitude' => $lng,
+        // ติดป้ายที่ตัวข้อมูล ไม่ใช่แค่ข้อความบนหน้าเว็บ — หน้า reports.html แสดงป้าย "ตัวอย่าง"
+        // และ tools/clear_demo.php ลบได้เฉพาะแถวนี้
+        'record_origin' => 'demo_seed',
     ]);
     $created_reports++;
 }

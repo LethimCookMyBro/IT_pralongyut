@@ -266,6 +266,46 @@ try {
         assert_that($row['location_source'] === 'manual', 'ควร default เป็น manual');
     });
 
+    // ---------- reports: แยกข้อมูลจริงออกจากข้อมูลตัวอย่าง ----------
+    // กรรมการ/ผู้ใช้ต้องแยกออกได้ว่าแถวไหนเป็นเรื่องแจ้งจริง แถวไหนเป็นตัวอย่างสำหรับเดโม
+
+    check('report defaults to record_origin citizen', function () use ($base, $prefix) {
+        [, $json] = request_json('GET', "$base/reports.php?q=" . urlencode("$prefix จุดที่ 20"));
+        assert_that(($json['reports'][0]['record_origin'] ?? null) === 'citizen',
+            'แถวที่คนแจ้งต้องเป็น citizen, ได้ ' . var_export($json['reports'][0]['record_origin'] ?? null, true));
+    });
+
+    check('report can be posted as demo_seed and filtered', function () use ($base, $prefix) {
+        [$status, $created] = request_json('POST', "$base/reports.php", [
+            'location' => "$prefix ตัวอย่างเดโม",
+            'waste_type' => 'general',
+            'amount_kg' => 7,
+            'record_origin' => 'demo_seed',
+        ]);
+        assert_that($status === 201, "expected 201, got $status");
+        assert_that($created['record_origin'] === 'demo_seed', 'response ต้องบอกว่าเป็น demo_seed');
+
+        [, $demo] = request_json('GET', "$base/reports.php?record_origin=demo_seed&per_page=100&q=$prefix");
+        assert_that($demo['pagination']['total'] === 1, 'ควรมีแถวตัวอย่าง 1 แถว, ได้ ' . $demo['pagination']['total']);
+        assert_that($demo['reports'][0]['location'] === "$prefix ตัวอย่างเดโม", 'ได้แถวผิด');
+
+        [, $real] = request_json('GET', "$base/reports.php?record_origin=citizen&per_page=100&q=$prefix");
+        assert_that($real['pagination']['total'] === REPORT_TOTAL, 'filter citizen ต้องไม่รวมแถวตัวอย่าง');
+        [, $all] = request_json('GET', "$base/reports.php?record_origin=all&per_page=100&q=$prefix");
+        assert_that($all['pagination']['total'] === REPORT_TOTAL + 1, 'all ต้องรวมทั้งสองแบบ');
+    });
+
+    check('reports reject unknown record_origin', function () use ($base, $prefix) {
+        expect_422("$base/reports.php?q=$prefix&record_origin=detector_run");
+        [$status] = request_json('POST', "$base/reports.php", [
+            'location' => "$prefix ค่าผิด",
+            'waste_type' => 'general',
+            'amount_kg' => 1,
+            'record_origin' => 'detector_run',
+        ]);
+        assert_that($status === 422, "POST ค่าผิดต้องได้ 422, ได้ $status");
+    });
+
     // ---------- incidents: pagination / filter / search ----------
 
     check('incidents paginate with search', function () use ($base, $prefix) {
@@ -398,6 +438,79 @@ try {
         assert_that($status === 200, "expected 200, got $status");
         assert_that($json['pagination']['per_page'] === 50, 'default per_page ของ timeline ควรเป็น 50');
     });
+    // ---------- activity: ไทม์ไลน์ย้อนหลัง (derived จาก reports + incidents) ----------
+    // ระบบไม่มีตาราง log แยก — endpoint นี้อ่านจากคอลัมน์เวลาที่มีอยู่จริงเท่านั้น
+    // $activity_total = reports ทั้งหมด (+1 แถวตัวอย่างจากเทสต์ก่อนหน้า) + incident ที่ถูกสร้าง
+    $activity_total = REPORT_TOTAL + 1 + INCIDENT_TOTAL;
+
+    check('activity defaults to 90 days and per_page 20', function () use ($base, $prefix, $activity_total) {
+        [$status, $json] = request_json('GET', "$base/activity.php?q=$prefix");
+        assert_that($status === 200, "expected 200, got $status");
+        assert_that(isset($json['activities']), 'ต้องมี key activities');
+        assert_that($json['pagination']['per_page'] === 20, 'default per_page ของไทม์ไลน์ควรเป็น 20');
+        assert_that($json['days'] === 90, 'default days ควรเป็น 90, ได้ ' . var_export($json['days'] ?? null, true));
+        assert_that($json['pagination']['total'] === $activity_total,
+            'total mismatch: ได้ ' . $json['pagination']['total'] . ' คาดว่า ' . $activity_total);
+    });
+
+    check('activity rows carry the fields the log page shows', function () use ($base, $prefix) {
+        [, $json] = request_json('GET', "$base/activity.php?q=$prefix&per_page=100");
+        foreach (['kind', 'occurred_at', 'ref_id', 'location', 'record_origin'] as $key) {
+            assert_that(array_key_exists($key, $json['activities'][0]), "activity ขาด key $key");
+        }
+        assert_that(is_int($json['activities'][0]['ref_id']), 'ref_id ควรเป็น number');
+        // เรียงใหม่ไปเก่า
+        $times = array_column($json['activities'], 'occurred_at');
+        $sorted = $times;
+        rsort($sorted);
+        assert_that($times === $sorted, 'ไทม์ไลน์ต้องเรียงจากใหม่ไปเก่า');
+    });
+
+    check('activity filters by kind', function () use ($base, $prefix) {
+        [, $reports] = request_json('GET', "$base/activity.php?q=$prefix&kind=report&per_page=100");
+        assert_that($reports['pagination']['total'] === REPORT_TOTAL + 1,
+            'report kind total mismatch: ' . $reports['pagination']['total']);
+        foreach ($reports['activities'] as $row) {
+            assert_that($row['kind'] === 'report', 'kind รั่ว: ' . $row['kind']);
+        }
+        [, $detect] = request_json('GET', "$base/activity.php?q=$prefix&kind=detect&per_page=100");
+        assert_that($detect['pagination']['total'] === INCIDENT_TOTAL, 'detect kind total mismatch');
+        // ยังไม่มีการตรวจ/ปิดงานกับข้อมูลชุดทดสอบนี้
+        [, $review] = request_json('GET', "$base/activity.php?q=$prefix&kind=review&per_page=100");
+        assert_that($review['pagination']['total'] === 0, 'review ควรเป็น 0');
+        assert_that($review['activities'] === [], 'review ควรได้ list ว่าง');
+    });
+
+    check('activity kind=all means every kind', function () use ($base, $prefix, $activity_total) {
+        [, $all] = request_json('GET', "$base/activity.php?q=$prefix&kind=all&per_page=100");
+        assert_that($all['pagination']['total'] === $activity_total, 'all ไม่ควรกรองอะไรออก');
+    });
+
+    check('activity day window narrows the result', function () use ($base, $prefix, $activity_total) {
+        // ข้อมูลชุดทดสอบเพิ่งถูกสร้าง — 1 วันย้อนหลังต้องยังเห็นครบ
+        [$status, $json] = request_json('GET', "$base/activity.php?q=$prefix&days=1&per_page=100");
+        assert_that($status === 200, "expected 200, got $status");
+        assert_that($json['days'] === 1, 'days ต้องสะท้อนค่าที่ขอ');
+        assert_that($json['pagination']['total'] === $activity_total, 'ข้อมูลของวันนี้ต้องยังอยู่ในหน้าต่าง 1 วัน');
+    });
+
+    check('activity paginates without overlap', function () use ($base, $prefix) {
+        [, $p1] = request_json('GET', "$base/activity.php?q=$prefix&per_page=5&page=1");
+        [, $p2] = request_json('GET', "$base/activity.php?q=$prefix&per_page=5&page=2");
+        assert_that(count($p1['activities']) === 5, 'expected 5 rows on page 1');
+        assert_that(count($p2['activities']) === 5, 'expected 5 rows on page 2');
+        $key = fn(array $r) => $r['kind'] . '-' . $r['ref_id'];
+        $overlap = array_intersect(array_map($key, $p1['activities']), array_map($key, $p2['activities']));
+        assert_that($overlap === [], 'หน้า 1 และ 2 ซ้ำกัน: ' . json_encode($overlap));
+    });
+
+    check('activity rejects bad days and kind', function () use ($base, $prefix) {
+        foreach (['days=0', 'days=91', 'days=abc', 'days=-1', 'kind=observation', 'kind=REPORT'] as $bad) {
+            expect_422("$base/activity.php?q=$prefix&$bad");
+        }
+        expect_422("$base/activity.php?q=$prefix&per_page=101");
+    });
+
 } finally {
     // ลบเฉพาะข้อมูลของรอบทดสอบนี้
     $pdo = db();

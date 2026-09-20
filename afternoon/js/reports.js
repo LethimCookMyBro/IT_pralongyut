@@ -19,13 +19,14 @@ const SOURCE_LABEL = { preset: 'พื้นที่ที่กำหนด', 
 
 const COLUMN_COUNT = 6;
 const SEARCH_DEBOUNCE_MS = 300;
-const DEFAULTS = { q: '', waste_type: '', status: '', page: 1 };
+const DEFAULTS = { q: '', waste_type: '', status: '', record_origin: '', page: 1 };
 
 const tbody = document.querySelector('#reports-table tbody');
 const paginationEl = document.getElementById('reports-pagination');
 const searchInput = document.getElementById('filter-q');
 const typeSelect = document.getElementById('filter-type');
 const statusSelect = document.getElementById('filter-status');
+const originSelect = document.getElementById('filter-origin');
 
 let state = readQueryState(DEFAULTS);
 let requestSeq = 0;
@@ -34,6 +35,7 @@ function applyStateToControls() {
     searchInput.value = state.q;
     typeSelect.value = state.waste_type;
     statusSelect.value = state.status;
+    originSelect.value = state.record_origin;
 }
 
 async function loadReports() {
@@ -76,7 +78,7 @@ async function loadReports() {
 }
 
 function hasFilter() {
-    return state.q !== '' || state.waste_type !== '' || state.status !== '';
+    return state.q !== '' || state.waste_type !== '' || state.status !== '' || state.record_origin !== '';
 }
 
 function renderRows(reports) {
@@ -93,10 +95,14 @@ function renderRows(reports) {
             ? `${Number(r.latitude).toFixed(5)}, ${Number(r.longitude).toFixed(5)}`
             : '';
         const origin = SOURCE_LABEL[r.location_source] ?? r.location_source;
+        // ป้าย "ตัวอย่าง" ติดกับชื่อจุดเลย เพื่อให้อ่านผ่าน ๆ ก็ไม่เข้าใจผิดว่าเป็นเรื่องจริง
+        const demoTag = r.record_origin === 'demo_seed'
+            ? '<span class="origin-tag demo_seed">ตัวอย่าง</span>'
+            : '';
         return `
             <tr>
                 <td class="cell-lead">
-                    <span class="cell-primary">${escapeHtml(r.location)}</span>
+                    <span class="cell-primary">${escapeHtml(r.location)}${demoTag}</span>
                     <span class="cell-secondary">${escapeHtml(coords ? `${origin} · ${coords}` : origin)}</span>
                 </td>
                 <td data-label="ประเภท">${escapeHtml(WASTE_TYPE_LABEL[r.waste_type] ?? r.waste_type)}</td>
@@ -129,6 +135,7 @@ document.getElementById('filter-bar').addEventListener('submit', (event) => {
 
 typeSelect.addEventListener('change', () => updateFilter({ waste_type: typeSelect.value }));
 statusSelect.addEventListener('change', () => updateFilter({ status: statusSelect.value }));
+originSelect.addEventListener('change', () => updateFilter({ record_origin: originSelect.value }));
 
 document.getElementById('filter-reset').addEventListener('click', () => {
     state = { ...DEFAULTS };

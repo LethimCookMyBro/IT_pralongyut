@@ -241,7 +241,9 @@ main {
 }
 
 section {
-    margin-bottom: var(--space-8);
+    /* เว้นระหว่าง section ให้พอแยกกลุ่มได้ แต่ไม่ต้องเลื่อนจอทิ้งเปล่า
+       (เดิม --space-8 = 3.5rem ทำให้หนึ่งหน้าจอเห็นเนื้อหาได้น้อยเกินไป) */
+    margin-bottom: var(--space-6);
 }
 
 section:last-child {
@@ -1131,6 +1133,78 @@ dialog.confirm-dialog::backdrop {
     margin-top: var(--space-5);
 }
 
+/* กล่องคำอธิบายเชิงเทคนิค: พับไว้เป็นค่าเริ่มต้น หน้า default จะได้ไม่ท่วมศัพท์
+   ใช้ <details>/<summary> ของ browser ตรง ๆ ไม่ต้องมี JS */
+.tech-details {
+    margin-top: var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    padding: 0 var(--space-4);
+}
+
+.tech-details > summary {
+    cursor: pointer;
+    padding: var(--space-3) 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-2);
+}
+
+.tech-details > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+}
+
+.tech-details[open] > summary {
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tech-details > *:not(summary) {
+    margin: var(--space-3) 0;
+}
+
+/* คำสั่ง/ชื่อไฟล์ในข้อความ — ไม่มีการ highlight syntax แค่ให้แยกจากข้อความปกติได้ */
+code {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 0.05rem 0.3rem;
+}
+
+pre {
+    margin: var(--space-3) 0;
+    padding: var(--space-3);
+    overflow-x: auto;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+pre code {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+/* ประเภทกิจกรรมในหน้าประวัติ: ไอคอนช่วยกวาดตาหาแถวที่สนใจเร็วขึ้น */
+.activity-kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.activity-kind .icon {
+    width: 1em;
+    height: 1em;
+    color: var(--color-muted);
+}
+
 /* ---------- Waste Vision: trend / area tags ---------- */
 .trend {
     display: inline-flex;
@@ -1838,6 +1912,7 @@ dialog.confirm-dialog::backdrop {
 }
 
 .detect-frame-wrap {
+    position: relative;
     aspect-ratio: 16 / 9;
     display: grid;
     place-items: center;
@@ -1867,6 +1942,27 @@ dialog.confirm-dialog::backdrop {
 .detect-frame-empty .icon {
     width: 34px;
     height: 34px;
+}
+
+/* ป้ายมุมภาพ: บอกตลอดว่ากำลังดูเฟรมสดหรือภาพตัวอย่าง
+   ค่าเริ่มต้นเป็นสีกลาง (ตัวอย่าง) ไม่ใช่สีเขียว เพื่อไม่ให้ดูเหมือนของสด */
+.frame-badge {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    padding: 0.15rem 0.5rem;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: #f9fafb;
+    background: rgb(17 24 39 / 0.82);
+    border: 1px solid rgb(249 250 251 / 0.35);
+    border-radius: 999px;
+}
+
+.frame-badge.is-live {
+    color: #052e2b;
+    background: #6ee7b7;
+    border-color: #34d399;
 }
 
 .detect-caption {
@@ -1916,15 +2012,39 @@ dialog.confirm-dialog::backdrop {
     gap: var(--space-3);
 }
 
+/* การ์ดเลือกวิดีโอเป็น <button role="radio"> จึงต้อง reset ค่า default ของปุ่ม
+   ให้กลับมาหน้าตาเหมือน .card ปกติ */
 .source-card {
+    display: block;
+    width: 100%;
     padding: var(--space-4);
+    font: inherit;
+    color: inherit;
+    text-align: left;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.source-card:hover {
+    border-color: var(--color-primary);
+}
+
+.source-card:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.source-card[aria-checked="true"] {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
 }
 
 .source-card h3 {
     margin: var(--space-2) 0 var(--space-1);
+    font-size: var(--text-base);
 }
 
 .source-card p {

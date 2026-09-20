@@ -8,6 +8,11 @@ const VALID_REPORT_STATUSES = ["PENDING", "NEEDS_CHECK", "RESOLVED"];
 // preset = เลือกจากพื้นที่ที่กำหนดไว้, gps = ตำแหน่งจาก browser geolocation, manual = ผู้ใช้พิมพ์เอง
 const VALID_LOCATION_SOURCES = ["preset", "gps", "manual"];
 
+// record_origin บอกว่าแถวนี้เกิดจากอะไร — แยกจาก location_source ที่บอกว่าพิกัดมาจากไหน
+// citizen = คนแจ้งเข้ามาจริง, demo_seed = ข้อมูลตัวอย่างที่ tools/seed_demo.php ใส่ไว้
+// หน้าเว็บต้องติดป้ายให้เห็นว่าแถวไหนเป็นตัวอย่าง และ tools/clear_demo.php ลบได้เฉพาะ demo_seed
+const VALID_REPORT_ORIGINS = ["citizen", "demo_seed"];
+
 // ตรวจพิกัดจาก browser geolocation ฝั่ง server ด้วย — ห้ามเชื่อค่าที่ client ส่งมา
 function validate_coordinate(mixed $value, float $limit, string $name): ?float
 {
@@ -82,6 +87,16 @@ function validate_report(array $data): array
         );
     }
 
+    $record_origin = $data["record_origin"] ?? "citizen";
+    if ($record_origin === null || $record_origin === "") {
+        $record_origin = "citizen";
+    }
+    if (!is_string($record_origin) || !in_array($record_origin, VALID_REPORT_ORIGINS, true)) {
+        throw new InvalidArgumentException(
+            "record_origin: ต้องเป็นหนึ่งใน " . implode(", ", VALID_REPORT_ORIGINS)
+        );
+    }
+
     $latitude = validate_coordinate($data["latitude"] ?? null, 90.0, "latitude");
     $longitude = validate_coordinate($data["longitude"] ?? null, 180.0, "longitude");
 
@@ -101,5 +116,6 @@ function validate_report(array $data): array
         "latitude" => $latitude,
         "longitude" => $longitude,
         "location_source" => $location_source,
+        "record_origin" => $record_origin,
     ];
 }

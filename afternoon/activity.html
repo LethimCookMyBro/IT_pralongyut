@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>ประวัติย้อนหลัง — Bangsaen Waste Vision</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="site">
+        <h1><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>Bangsaen Waste Vision</h1>
+        <nav class="site" aria-label="เมนูหลัก">
+            <a href="index.html"><svg class="icon" aria-hidden="true"><use href="#icon-chart"></use></svg>สถิติ</a>
+            <a href="report.html"><svg class="icon" aria-hidden="true"><use href="#icon-flag"></use></svg>แจ้งจุดขยะ</a>
+            <a href="reports.html"><svg class="icon" aria-hidden="true"><use href="#icon-list"></use></svg>รายการแจ้ง</a>
+            <a href="detect.html"><svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>ตรวจจับ AI</a>
+            <a href="vision.html"><svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>ศูนย์ตรวจสอบ</a>
+            <a href="activity.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>ประวัติ</a>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h1 class="page-title">ประวัติย้อนหลัง</h1>
+            <p class="muted">
+                เหตุการณ์ที่เกิดขึ้นในระบบ เรียงจากใหม่ไปเก่า ย้อนหลังได้ไม่เกิน 90 วัน
+                <span class="term-en">(activity log)</span>
+            </p>
+
+            <p class="replay-banner">
+                <svg class="icon" aria-hidden="true"><use href="#icon-warning"></use></svg>
+                <span>หน้านี้อ่านจากเวลาที่บันทึกไว้ในข้อมูลจริงของระบบ ไม่ได้เติมประวัติย้อนหลังเทียม
+                    ถ้าเพิ่งติดตั้ง จะเห็นเฉพาะช่วงที่เริ่มใช้งานเท่านั้น
+                    และแถวที่ติดป้าย <span class="origin-tag demo_seed">ข้อมูลสาธิต</span> คือข้อมูลตัวอย่างสำหรับเดโม</span>
+            </p>
+
+            <form class="filter-bar" id="filter-bar" role="search">
+                <label class="field field-search" for="filter-q">ค้นหาสถานที่
+                    <input type="search" id="filter-q" name="q" placeholder="เช่น หาดบางแสน, คลอง" autocomplete="off">
+                </label>
+                <label class="field" for="filter-days">ช่วงเวลา
+                    <select id="filter-days" name="days">
+                        <option value="7">7 วันล่าสุด</option>
+                        <option value="30">30 วันล่าสุด</option>
+                        <option value="90" selected>90 วันล่าสุด</option>
+                    </select>
+                </label>
+                <label class="field" for="filter-kind">ประเภทกิจกรรม
+                    <select id="filter-kind" name="kind">
+                        <option value="">ทั้งหมด</option>
+                        <option value="report">คนแจ้งจุดขยะ</option>
+                        <option value="detect">AI พบเหตุใหม่</option>
+                        <option value="review">เจ้าหน้าที่ตรวจ</option>
+                        <option value="resolve">ปิดงาน</option>
+                    </select>
+                </label>
+                <button type="button" class="btn-ghost btn-sm filter-reset" id="filter-reset">ล้างตัวกรอง</button>
+            </form>
+
+            <p class="muted" id="activity-total"></p>
+
+            <div class="table-wrap">
+                <table id="activity-table" class="as-cards">
+                    <thead>
+                        <tr>
+                            <th>เวลา</th>
+                            <th>กิจกรรม</th>
+                            <th>จุด/สถานที่</th>
+                            <th>ผลลัพธ์</th>
+                            <th>อ้างอิง</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <nav class="pagination" id="activity-pagination"></nav>
+
+            <details class="tech-details">
+                <summary>ประวัตินี้ครอบคลุมอะไร และยังไม่ครอบคลุมอะไร</summary>
+                <p class="muted">
+                    ระบบยังไม่มีตารางบันทึกเหตุการณ์แยก หน้านี้จึงอ่านจากคอลัมน์เวลาที่มีอยู่จริง
+                    (<span class="term-en">reports.created_at, vision_incidents.first_seen / reviewed_at / resolved_at</span>)
+                    ผลคือ <strong>เห็น</strong> การแจ้งเรื่อง การพบเหตุใหม่ การตรวจครั้งล่าสุด และการปิดงาน
+                    แต่ <strong>ยังไม่เห็น</strong> การตรวจซ้ำครั้งก่อน ๆ ของเหตุเดิม (ดูได้ในหน้ารายละเอียดเหตุ)
+                    และการแก้ไขข้อมูล เพราะยังไม่ได้เก็บเวลาที่แก้
+                </p>
+            </details>
+        </section>
+    </main>
+
+    <script src="js/ui.js"></script>
+    <!-- ใช้คำแปลสถานะ/ป้ายที่มาชุดเดียวกับหน้าศูนย์ตรวจสอบ เพื่อไม่ให้คำเรียกเพี้ยนกันคนละหน้า -->
+    <script src="js/vision-common.js"></script>
+    <script src="js/activity.js"></script>
+</body>
+</html>

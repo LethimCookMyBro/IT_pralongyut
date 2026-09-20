@@ -22,6 +22,7 @@ CREATE TABLE waste_stats (
 
 -- ตารางเดิม: จุดแจ้งขยะจากประชาชน/เจ้าหน้าที่
 -- latitude/longitude/location_source เพิ่มใน migrations/001_reports_location.sql
+-- record_origin เพิ่มใน migrations/004_reports_record_origin.sql
 -- ที่นี่ใส่ไว้ให้ fresh install ได้โครงเดียวกันกับฐานที่ migrate แล้ว
 DROP TABLE IF EXISTS reports;
 CREATE TABLE reports (
@@ -30,6 +31,8 @@ CREATE TABLE reports (
     latitude DECIMAL(10,7) NULL,
     longitude DECIMAL(10,7) NULL,
     location_source ENUM('preset','gps','manual') NOT NULL DEFAULT 'manual',
+    -- citizen = คนแจ้งจริง, demo_seed = ข้อมูลตัวอย่างจาก tools/seed_demo.php
+    record_origin ENUM('citizen','demo_seed') NOT NULL DEFAULT 'citizen',
     waste_type VARCHAR(20) NOT NULL,
     amount_kg INT NOT NULL,
     detail VARCHAR(500) NOT NULL DEFAULT '',

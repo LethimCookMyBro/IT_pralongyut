@@ -68,6 +68,14 @@ reports also has latitude / longitude (both NULL-able) and location_source
 afternoon/sql/migrations/001_reports_location.sql (ALTER TABLE, keeps old
 rows; old rows get location_source = manual and NULL coordinates).
 schema.sql already contains the same columns for a fresh install.
+
+reports.record_origin (citizen | demo_seed, default citizen) marks which rows are
+fictional demo data. Added by afternoon/sql/migrations/004_reports_record_origin.sql.
+It is a different vocabulary from the vision tables (demo_seed | detector_run) and
+unrelated to location_source. Only tools/seed_demo.php writes demo_seed; only
+tools/clear_demo.php deletes those rows. Never relabel existing rows in bulk —
+a row submitted through the real form is citizen even if it looks like test data.
+
 Migrations are additive only — never DROP or recreate a live table.
 
 Two setup scripts, and they are not interchangeable:
@@ -95,16 +103,34 @@ Two setup scripts, and they are not interchangeable:
   the only knob controlling how raw observations get grouped into one incident
 - afternoon/sql/migrations/003_vision_record_origin.sql — additive migration that adds
   `record_origin` to incidents + observations; existing rows default to `demo_seed`
+- afternoon/api/activity.php — GET derived 90-day activity timeline (days, kind,
+  q, page, per_page). There is no log table: the timeline is a UNION ALL over
+  reports.created_at + vision_incidents.first_seen/reviewed_at/resolved_at, so it
+  only shows events the schema actually timestamps. Do not backfill fake history.
+- afternoon/lib/activity.php — ACTIVITY_MAX_DAYS/DEFAULT_DAYS (90),
+  ACTIVITY_KINDS (report|detect|review|resolve), day+kind validation and the
+  UNION ALL builder. $days is cast to int before being embedded in SQL.
 - afternoon/lib/pagination.php — shared page/per_page parsing + pagination payload
 - afternoon/lib/vision_evidence.php — validate/normalize evidence image path
   (allowlist folder + extension, ไฟล์ต้องมีจริง, กัน ../ และ URL/scheme)
 - afternoon/assets/vision/ — ภาพผลลัพธ์จริงจาก detector + README.md ที่บันทึกที่มาของแต่ละไฟล์
+  sample-road/city/water.jpg เป็นเฟรมจริงจาก worker (--no-post) ที่ detect.html ใช้เป็น
+  "ตัวอย่างผลลัพธ์" ตอนไม่มี worker — ตัวเลขใน js/detect.js SAMPLES ต้องตรงกับตาราง
+  ใน README ของโฟลเดอร์นั้น ห้ามแก้ด้วยมือ และห้ามผูกไฟล์เหล่านี้กับ observation ใด
 - afternoon/js/vision.js — incident queue (list only)
 - afternoon/js/incident.js + afternoon/incident.html — incident detail
 - afternoon/js/vision-common.js — status/trend/format helpers shared by both vision pages
+  (activity.html ก็โหลดไฟล์นี้เพื่อใช้ statusBadge/originTag ชุดเดียวกัน)
+- afternoon/js/activity.js + afternoon/activity.html — 90-day activity log page
 - afternoon/tools/seed_demo.php — additive demo data through the real APIs
-  (INSERT-only; no DELETE/TRUNCATE/DROP). Data is fictional.
-- afternoon/lib/cli_only.php — required first by tools/seed_demo.php and all three
+  (INSERT-only; no DELETE/TRUNCATE/DROP). Data is fictional and tagged
+  record_origin = demo_seed so the UI can label it and clear_demo.php can remove it.
+- afternoon/tools/clear_demo.php — deletes ONLY record_origin = 'demo_seed' rows
+  (reports, then vision_observations, then vision_incidents — observations first
+  because the FK is ON DELETE SET NULL). Dry-run by default, --yes to delete.
+  This is not a reset script: it must never DROP/TRUNCATE or touch citizen /
+  detector_run rows.
+- afternoon/lib/cli_only.php — required first by both tools/*.php and all three
   tests/*.php; returns 404 when PHP_SAPI !== "cli" so a public URL cannot seed or
   mutate the DB. Do not remove it to "make the script reachable from the browser".
 - afternoon/lib/db.php — db_config() reads MYSQLHOST/MYSQLPORT/MYSQLUSER/
@@ -117,6 +143,11 @@ Two setup scripts, and they are not interchangeable:
 - afternoon/api/live-detection.php — read-only GET endpoint for the detector status.
 - afternoon/detect.html + afternoon/js/detect.js — Local AI status/annotated-frame page.
   It polls the read-only endpoint and asks for webcam permission only after a user click.
+  Source picker = three <button role="radio"> cards (not a dropdown). The frame always
+  carries a badge saying which mode it is: เฟรมสด / เฟรมล่าสุด (ค้าง) / ตัวอย่างผลลัพธ์.
+  With no worker it renders SAMPLES (real past frames) instead of blanking the page.
+  Clicking a card sets userPicked, which stops the poll from yanking the view back to
+  the worker's own source. Never mix one source's image with another source's numbers.
 - local_vision/worker.py — local-only continuous pLitter replay worker. Loads one model
   once, atomically writes latest.jpg/latest.json, POSTs bounded observations to
   api/vision.php as `replay + detector_run`, and keeps only a bounded number of
@@ -135,9 +166,13 @@ Pages:
   then waste_type + amount_kg inside .fieldset-secondary ("ข้อมูลประกอบ").
   amount_kg is still required — the workshop and its tests depend on it.
 - reports.html + js/reports.js + api/reports.php — full report list with
-  search/filters/pagination
+  search/filters/pagination, including a record_origin filter. Demo rows carry an
+  inline "ตัวอย่าง" tag next to the location so a judge cannot read them as real
+  municipal data.
 - detect.html + js/detect.js + api/live-detection.php — local detector viewer/status
 - vision.html / incident.html — incident queue and incident detail
+- activity.html + js/activity.js + api/activity.php — ประวัติย้อนหลัง 90 วัน
+  (filters: q / days 7|30|90 / kind). Derived, not a log table.
 
 vision.html splits work into three groups instead of one mixed list, so the
 officer opens the page on what is still theirs to do:
@@ -212,5 +247,7 @@ Useful commands:
   vision-common, incident, locations, detect)
 - C:\tmp\cv_venv\Scripts\python.exe local_vision\worker.py --source road --max-inferences 3 --no-post --no-loop
 - GET http://localhost/bangsaen/api/live-detection.php while worker is running
-- Railway: GET /api/stats.php, /api/reports.php, /api/vision.php and
-  /api/live-detection.php; /tools/seed_demo.php and /tests/*.php must stay 404
+- GET http://localhost/bangsaen/api/activity.php?days=90
+- Railway: GET /api/stats.php, /api/reports.php, /api/vision.php,
+  /api/activity.php and /api/live-detection.php;
+  /tools/*.php and /tests/*.php must stay 404

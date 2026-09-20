@@ -6,7 +6,7 @@ require __DIR__ . '/../lib/response.php';
 require __DIR__ . '/../lib/validate.php';
 require __DIR__ . '/../lib/pagination.php';
 
-// GET /api/reports.php?page=1&per_page=10&waste_type=general&status=PENDING&q=บางแสน
+// GET /api/reports.php?page=1&per_page=10&waste_type=general&status=PENDING&record_origin=citizen&q=บางแสน
 // คืน { reports: [...], pagination: { page, per_page, total, total_pages } }
 // หมายเหตุ contract: เดิม endpoint นี้คืน JSON array เปล่า ๆ ตอนนี้ห่อด้วย envelope
 // เพราะ pagination ต้องส่ง total/total_pages กลับไปด้วย
@@ -16,6 +16,8 @@ function get_reports(): void
         $paging = pagination_params($_GET);
         $waste_type = report_filter($_GET['waste_type'] ?? ($_GET['type'] ?? null), VALID_WASTE_TYPES, 'waste_type');
         $status = report_filter($_GET['status'] ?? null, VALID_REPORT_STATUSES, 'status');
+        // แยกเรื่องแจ้งจริงออกจากแถวตัวอย่างสำหรับเดโม — ใช้ทั้งใน UI และ tools/clear_demo.php
+        $origin = report_filter($_GET['record_origin'] ?? null, VALID_REPORT_ORIGINS, 'record_origin');
     } catch (InvalidArgumentException $e) {
         json_error($e->getMessage(), 422);
     }
@@ -32,6 +34,10 @@ function get_reports(): void
         $where .= ' AND status = :status';
         $params['status'] = $status;
     }
+    if ($origin !== null) {
+        $where .= ' AND record_origin = :record_origin';
+        $params['record_origin'] = $origin;
+    }
     if ($search !== null) {
         $where .= ' AND location LIKE :search';
         $params['search'] = $search;
@@ -46,7 +52,7 @@ function get_reports(): void
     $limit = $paging['per_page'];
     $offset = $paging['offset'];
     $stmt = $pdo->prepare(
-        "SELECT id, location, latitude, longitude, location_source,
+        "SELECT id, location, latitude, longitude, location_source, record_origin,
                 waste_type, amount_kg, detail, status, created_at
          FROM reports$where
          ORDER BY created_at DESC, id DESC
@@ -97,8 +103,10 @@ function post_report(): void
 
     $pdo = db();
     $stmt = $pdo->prepare(
-        "INSERT INTO reports (location, waste_type, amount_kg, detail, latitude, longitude, location_source)
-         VALUES (:location, :waste_type, :amount_kg, :detail, :latitude, :longitude, :location_source)"
+        "INSERT INTO reports (location, waste_type, amount_kg, detail, latitude, longitude,
+                              location_source, record_origin)
+         VALUES (:location, :waste_type, :amount_kg, :detail, :latitude, :longitude,
+                 :location_source, :record_origin)"
     );
     $stmt->execute($clean);
     json_response(["id" => (int)$pdo->lastInsertId()] + $clean, 201);
